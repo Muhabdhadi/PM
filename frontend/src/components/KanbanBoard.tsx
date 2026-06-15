@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -25,7 +26,13 @@ export const KanbanBoard = () => {
     })
   );
 
+  const router = useRouter();
   const cardsById = useMemo(() => board.cards, [board.cards]);
+
+  const handleLogout = async () => {
+    await fetch("/api/logout", { method: "POST" });
+    router.replace("/login");
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveCardId(event.active.id as string);
@@ -130,6 +137,13 @@ export const KanbanBoard = () => {
                 {column.title}
               </div>
             ))}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="ml-auto rounded-full border border-[var(--stroke)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary-blue)] transition hover:border-[var(--primary-blue)]"
+            >
+              Sign out
+            </button>
           </div>
         </header>
 
