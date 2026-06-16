@@ -41,6 +41,18 @@ Part 5: Database modeling
 - 5.3 Add a short rationale: JSON-in-SQLite for simplicity and acceptable performance in an MVP.
 Success criteria (Part 5): documented schema in `docs/` and DB auto-created on backend start.
 
+Schema details (implemented):
+
+- Database file: `backend/pm.db` (auto-created on first start)
+- Table: `boards`
+	- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+	- `user_id` TEXT UNIQUE NOT NULL
+	- `kanban_json` TEXT NOT NULL
+	- `created_at` TEXT NOT NULL (ISO timestamp)
+	- `updated_at` TEXT NOT NULL (ISO timestamp)
+
+Rationale: storing the full board JSON in a single TEXT column keeps the MVP simple, avoids early normalization, and is easy to validate and persist. The backend initializes the DB at startup and provides simple GET/PUT endpoints for a user's board.
+
 Part 6: Backend
 
 - 6.1 Implement CRUD endpoints for boards and cards (GET/PUT for a user's board, POST for card create, PATCH for card update/move, DELETE for card delete).

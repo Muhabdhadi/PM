@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 import os
 import secrets
+import db
 
 app = FastAPI()
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
@@ -21,6 +22,32 @@ def get_username_from_session(session_token: str | None = Cookie(None)):
     if session_token is None:
         return None
     return sessions.get(session_token)
+
+
+@app.on_event("startup")
+def startup_event():
+    # initialize sqlite DB if missing
+    db.init_db()
+
+
+@app.get("/api/board")
+def get_board(username: str | None = Depends(get_username_from_session)):
+    if username is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    board = db.get_board(username)
+    if board is None:
+        # return an empty board skeleton for new users
+        return {"board": {"columns": [], "cards": {}}}
+    return {"board": board}
+
+
+@app.put("/api/board")
+def put_board(payload: dict, username: str | None = Depends(get_username_from_session)):
+    if username is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    # payload is expected to be the board JSON
+    db.upsert_board(username, payload)
+    return {"status": "ok"}
 
 
 @app.get("/health")
