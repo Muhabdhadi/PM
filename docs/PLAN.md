@@ -86,15 +86,20 @@ Part 10: AI Chat UI
 - 10.3 Add end-to-end tests covering a sample chat flow that results in a board update.
 Success criteria (Part 10): chat UI works, AI-driven updates apply correctly, end-to-end tests pass.
 
+Current status
+
+- Parts 1 through 7 are implemented.
+- Part 5 is complete with SQLite JSON persistence, auto-created DB on startup, and a `boards` table.
+- Part 6 is complete with backend board/card REST endpoints and pytest coverage.
+- Part 7 is complete with frontend board load/save and card-level API integration.
+- Part 8 is next: OpenRouter integration and AI proxy endpoint.
+
 Notes and constraints
 
 - Use `OPENROUTER_API_KEY` from `.env` for AI calls.
 - Keep the MVP simple—favor JSON-in-SQLite for the Kanban store unless user requests a relational design.
 - Include clear run instructions in both `frontend/AGENTS.md` and this document.
 - Aim for roughly 80% test coverage only when it makes sense; prioritize valuable tests over meeting a metric. Missing 80% is acceptable if the tests are not adding real value.
-
-Next action: implement Part 4, fake user sign-in, including server-side session checks and a protected login flow.
-# High level steps for project
 
 Part 1: Plan
 
