@@ -74,7 +74,7 @@ export const initialData: BoardData = {
 const isColumnId = (columns: Column[], id: string) =>
   columns.some((column) => column.id === id);
 
-const findColumnId = (columns: Column[], id: string) => {
+export const findColumnId = (columns: Column[], id: string) => {
   if (isColumnId(columns, id)) {
     return id;
   }
@@ -159,6 +159,14 @@ export const moveCard = (
     }
     return column;
   });
+};
+
+export const getCardPosition = (columns: Column[], cardId: string) => {
+  const column = columns.find((column) => column.cardIds.includes(cardId));
+  if (!column) {
+    return -1;
+  }
+  return column.cardIds.indexOf(cardId);
 };
 
 export const createId = (prefix: string) => {

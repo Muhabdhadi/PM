@@ -3,7 +3,11 @@ from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 import os
 import secrets
-import db
+try:
+    import db
+except ModuleNotFoundError:
+    # when running inside Docker the package path may be different
+    from backend import db
 
 app = FastAPI()
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")

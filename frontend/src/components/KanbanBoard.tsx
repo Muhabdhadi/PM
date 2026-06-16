@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -14,7 +14,14 @@ import {
 } from "@dnd-kit/core";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
-import { createId, initialData, moveCard, type BoardData } from "@/lib/kanban";
+import {
+  createId,
+  findColumnId,
+  getCardPosition,
+  initialData,
+  moveCard,
+  type BoardData,
+} from "@/lib/kanban";
 
 export const KanbanBoard = () => {
   const [board, setBoard] = useState<BoardData>(() => initialData);
@@ -34,11 +41,23 @@ export const KanbanBoard = () => {
     router.replace("/login");
   };
 
+  const saveBoard = async (nextBoard: BoardData) => {
+    try {
+      await fetch("/api/board", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextBoard),
+      });
+    } catch (err) {
+      // no-op on save failure
+    }
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveCardId(event.active.id as string);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveCardId(null);
 
@@ -46,40 +65,68 @@ export const KanbanBoard = () => {
       return;
     }
 
-    setBoard((prev) => ({
-      ...prev,
-      columns: moveCard(prev.columns, active.id as string, over.id as string),
-    }));
+    setBoard((prev) => {
+      const nextColumns = moveCard(prev.columns, active.id as string, over.id as string);
+      const nextBoard = { ...prev, columns: nextColumns };
+      const newColumnId = findColumnId(nextColumns, active.id as string);
+      const position = getCardPosition(nextColumns, active.id as string);
+
+      if (newColumnId && position !== -1) {
+        fetch(`/api/cards/${active.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ columnId: newColumnId, position }),
+        }).catch(() => {
+          // ignore move failures for now
+        });
+      }
+
+      return nextBoard;
+    });
   };
 
   const handleRenameColumn = (columnId: string, title: string) => {
-    setBoard((prev) => ({
-      ...prev,
-      columns: prev.columns.map((column) =>
-        column.id === columnId ? { ...column, title } : column
-      ),
-    }));
+    setBoard((prev) => {
+      const nextBoard = {
+        ...prev,
+        columns: prev.columns.map((column) =>
+          column.id === columnId ? { ...column, title } : column
+        ),
+      };
+      saveBoard(nextBoard);
+      return nextBoard;
+    });
   };
 
   const handleAddCard = (columnId: string, title: string, details: string) => {
     const id = createId("card");
-    setBoard((prev) => ({
-      ...prev,
-      cards: {
-        ...prev.cards,
-        [id]: { id, title, details: details || "No details yet." },
-      },
-      columns: prev.columns.map((column) =>
-        column.id === columnId
-          ? { ...column, cardIds: [...column.cardIds, id] }
-          : column
-      ),
-    }));
+    setBoard((prev) => {
+      const nextBoard = {
+        ...prev,
+        cards: {
+          ...prev.cards,
+          [id]: { id, title, details: details || "No details yet." },
+        },
+        columns: prev.columns.map((column) =>
+          column.id === columnId
+            ? { ...column, cardIds: [...column.cardIds, id] }
+            : column
+        ),
+      };
+      fetch("/api/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...nextBoard.cards[id], columnId }),
+      }).catch(() => {
+        // ignore create failures for now
+      });
+      return nextBoard;
+    });
   };
 
   const handleDeleteCard = (columnId: string, cardId: string) => {
     setBoard((prev) => {
-      return {
+      const nextBoard = {
         ...prev,
         cards: Object.fromEntries(
           Object.entries(prev.cards).filter(([id]) => id !== cardId)
@@ -93,8 +140,36 @@ export const KanbanBoard = () => {
             : column
         ),
       };
+      fetch(`/api/cards/${cardId}`, { method: "DELETE" }).catch(() => {
+        // ignore delete failures for now
+      });
+      return nextBoard;
     });
   };
+
+  // Load board from backend on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/board");
+        if (!mounted) return;
+        if (res.status === 401) {
+          router.replace("/login");
+          return;
+        }
+        const data = await res.json();
+        if (data && data.board) {
+          setBoard(data.board as BoardData);
+        }
+      } catch (err) {
+        // network failure — keep initial data
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
 
   const activeCard = activeCardId ? cardsById[activeCardId] : null;
 
