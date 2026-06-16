@@ -1,3 +1,5 @@
+import os
+import pytest
 from fastapi.testclient import TestClient
 
 from main import app
@@ -49,3 +51,24 @@ def test_invalid_login_rejected():
     )
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid credentials"
+
+
+def test_ai_proxy_calls_openrouter_live():
+    if not os.getenv("OPENROUTER_API_KEY"):
+        pytest.skip("OPENROUTER_API_KEY is not set")
+
+    login_response = client.post(
+        "/api/login",
+        json={"username": "user", "password": "password"},
+    )
+    assert login_response.status_code == 200
+
+    response = client.post(
+        "/api/ai",
+        json={"prompt": "What is 2+2?"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert isinstance(data.get("output"), str)
+    assert data["output"].strip() != ""

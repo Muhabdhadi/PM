@@ -2,12 +2,18 @@ from fastapi import Cookie, Depends, FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 import os
+import json
 import secrets
+import requests
+from dotenv import load_dotenv
 try:
     import db
 except ModuleNotFoundError:
     # when running inside Docker the package path may be different
     from backend import db
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
 app = FastAPI()
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
@@ -95,9 +101,83 @@ def auth_status(username: str | None = Depends(get_username_from_session)):
     return {"authenticated": username is not None, "username": username}
 
 
+class AIRequest(BaseModel):
+    prompt: str
+    board: dict | None = None
+    history: list[dict] | None = None
+
+
+def get_openrouter_api_key() -> str:
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENROUTER_API_KEY is not configured")
+    return api_key
+
+
 @app.get("/api/echo")
 def echo(q: str = "hello"):
     return {"echo": q}
+
+
+@app.post("/api/ai")
+def ai_proxy(payload: AIRequest, username: str | None = Depends(get_username_from_session)):
+    if username is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    api_key = get_openrouter_api_key()
+    messages = []
+    if payload.board is not None:
+        messages.append({
+            "role": "system",
+            "content": f"Current board state: {json.dumps(payload.board)}",
+        })
+    if payload.history:
+        messages.extend(payload.history)
+    messages.append({"role": "user", "content": payload.prompt})
+
+    body = {
+        "model": "openai/gpt-oss-120b:free",
+        "messages": messages,
+        "temperature": 0.2,
+        "max_tokens": 150,
+    }
+
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=body,
+            timeout=30,
+        )
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"OpenRouter request failed: {exc}")
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"OpenRouter returned {response.status_code}: {response.text}")
+
+    try:
+        result = response.json()
+    except ValueError:
+        raise HTTPException(status_code=502, detail="Invalid JSON received from OpenRouter")
+
+    choices = result.get("choices")
+    if not choices or not isinstance(choices, list):
+        raise HTTPException(status_code=502, detail="OpenRouter response missing choices")
+
+    message = choices[0].get("message", {})
+    content = message.get("content")
+    if content is None:
+        raise HTTPException(status_code=502, detail="OpenRouter response missing message content")
+
+    return {
+        "status": "ok",
+        "model": result.get("model"),
+        "output": content,
+        "raw": result,
+    }
 
 
 # ----- Card-level CRUD (Part 6) -----

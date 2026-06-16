@@ -1,138 +1,147 @@
 # High level steps for project
 
-This document is the master plan. Each Part below contains concrete substeps, tests, and success criteria. The agent will mark substeps complete as work progresses. The goal for Part 1 is to produce a detailed implementation plan and a frontend AGENTS.md describing the current frontend code.
-Part 1: Plan (deliverables)
+This document is the master plan. Each Part below contains concrete substeps, tests, and success criteria. The agent will mark substeps complete as work progresses.
 
-- 1.1 Audit frontend code: list key files, components, tests, and how to run the frontend locally.
-- 1.2 Create `frontend/AGENTS.md` describing the structure, responsibilities, and test coverage of the frontend.
-- 1.3 Expand this PLAN.md: for each subsequent Part (2–10) add a checklist of substeps, owner (agent), estimated effort, and explicit success criteria and tests.
+## Current status
+
+- [x] Part 1: Plan
+- [x] Part 2: Scaffolding
+- [x] Part 3: Add Frontend
+- [x] Part 4: Fake user sign-in
+- [x] Part 5: Database modeling
+- [x] Part 6: Backend
+- [x] Part 7: Frontend + Backend
+- [x] Part 8: AI connectivity
+- [ ] Part 9: Structured Outputs
+- [ ] Part 10: AI Chat UI
+
+## Part 1: Plan (deliverables)
+
+- [x] 1.1 Audit frontend code: list key files, components, tests, and how to run the frontend locally.
+- [x] 1.2 Create `frontend/AGENTS.md` describing the structure, responsibilities, and test coverage of the frontend.
+- [x] 1.3 Expand this `docs/PLAN.md`: for each subsequent Part (2–10) add a checklist of substeps, explicit success criteria, and tests.
+
 Success criteria (Part 1):
 
-- The repo contains `frontend/AGENTS.md` with clear file/component mapping and run instructions.
-- `docs/PLAN.md` contains substeps for Parts 2–10 with testable acceptance criteria.
-- User responds with either Approved / Minor edits / Major changes.
-Part 2: Scaffolding
+- [x] The repo contains `frontend/AGENTS.md` with clear file/component mapping and run instructions.
+- [x] `docs/PLAN.md` contains substeps for Parts 2–10 with testable acceptance criteria.
+- [x] User reviews and approves the plan.
 
-- 2.1 Add a Dockerfile and docker-compose (if needed) to run both the FastAPI backend and the statically built frontend from one container.
-- 2.2 Create a minimal FastAPI app in `backend/` exposing a health check and a sample API endpoint.
-- 2.3 Add start/stop scripts in `scripts/` for Windows, macOS, and Linux.
+## Part 2: Scaffolding
+
+- [x] 2.1 Add a Dockerfile and docker-compose (if needed) to run both the FastAPI backend and the statically built frontend from one container.
+- [x] 2.2 Create a minimal FastAPI app in `backend/` exposing a health check and a sample API endpoint.
+- [x] 2.3 Add start/stop scripts in `scripts/` for Windows, macOS, and Linux.
+
 Success criteria (Part 2):
 
-- Container builds and starts; `GET /health` returns 200; static page served at `/`.
+- [x] Container builds and starts successfully.
+- [x] `GET /health` returns 200.
+- [x] Static page is served at `/`.
 
-Part 3: Add in Frontend
+## Part 3: Add in Frontend
 
-- 3.1 Add an `npm` build step and ensure the build artifacts are copied to the backend container image. Use Next.js `output: "export"` instead of `next export` for version 16.
-- 3.2 Confirm the demo Kanban displays at `/` when the container is running.
-- 3.3 Add unit tests and simple integration tests for the frontend build pipeline.
-Success criteria (Part 3): build artifacts served and frontend tests pass locally.
+- [x] 3.1 Add an `npm` build step and ensure build artifacts are copied to the backend container image. Use Next.js `output: "export"` instead of `next export` for version 16.
+- [x] 3.2 Confirm the demo Kanban displays at `/` when the container is running.
+- [x] 3.3 Add unit tests and simple integration tests for the frontend build pipeline.
 
-Part 4: Fake user sign-in
+Success criteria (Part 3):
 
-- 4.1 Implement a simple session cookie + server-side check that accepts `user`/`password`.
-- 4.2 Protect `/` so unauthenticated users are redirected to the login page.
-- 4.3 Add tests verifying login/logout flows and cookie/session behavior.
-Success criteria (Part 4): login works, protected route enforced, tests pass.
+- [x] Build artifacts are served from the backend.
+- [x] Frontend tests pass locally.
 
-Part 5: Database modeling
+## Part 4: Fake user sign-in
 
-- 5.1 Propose schema: use SQLite with a `boards` table storing board JSON in a `kanban_json` column (TEXT) along with `user_id` and timestamps.
-- 5.2 Document migration/initialization behavior: create DB file if missing.
-- 5.3 Add a short rationale: JSON-in-SQLite for simplicity and acceptable performance in an MVP.
-Success criteria (Part 5): documented schema in `docs/` and DB auto-created on backend start.
+- [x] 4.1 Implement a simple session cookie + server-side check that accepts `user`/`password`.
+- [x] 4.2 Protect `/` so unauthenticated users are redirected to the login page.
+- [x] 4.3 Add tests verifying login/logout flows and cookie/session behavior.
+
+Success criteria (Part 4):
+
+- [x] Login works.
+- [x] Protected route is enforced.
+- [x] Tests pass.
+
+## Part 5: Database modeling
+
+- [x] 5.1 Propose schema: use SQLite with a `boards` table storing board JSON in a `kanban_json` column (TEXT) along with `user_id` and timestamps.
+- [x] 5.2 Document migration/initialization behavior: create DB file if missing.
+- [x] 5.3 Add a short rationale: JSON-in-SQLite for simplicity and acceptable performance in an MVP.
+
+Success criteria (Part 5):
+
+- [x] Schema documented in `docs/`.
+- [x] DB auto-creates on backend start.
 
 Schema details (implemented):
 
 - Database file: `backend/pm.db` (auto-created on first start)
 - Table: `boards`
-	- `id` INTEGER PRIMARY KEY AUTOINCREMENT
-	- `user_id` TEXT UNIQUE NOT NULL
-	- `kanban_json` TEXT NOT NULL
-	- `created_at` TEXT NOT NULL (ISO timestamp)
-	- `updated_at` TEXT NOT NULL (ISO timestamp)
+  - `id` INTEGER PRIMARY KEY AUTOINCREMENT
+  - `user_id` TEXT UNIQUE NOT NULL
+  - `kanban_json` TEXT NOT NULL
+  - `created_at` TEXT NOT NULL (ISO timestamp)
+  - `updated_at` TEXT NOT NULL (ISO timestamp)
 
-Rationale: storing the full board JSON in a single TEXT column keeps the MVP simple, avoids early normalization, and is easy to validate and persist. The backend initializes the DB at startup and provides simple GET/PUT endpoints for a user's board.
+Rationale: storing the full board JSON in a single TEXT column keeps the MVP simple, avoids early normalization, and is easy to validate and persist.
 
-Part 6: Backend
+## Part 6: Backend
 
-- 6.1 Implement CRUD endpoints for boards and cards (GET/PUT for a user's board, POST for card create, PATCH for card update/move, DELETE for card delete).
-- 6.2 Write unit tests for each endpoint using `pytest` and FastAPI TestClient.
-Success criteria (Part 6): endpoints implemented and unit tests passing.
+- [x] 6.1 Implement CRUD endpoints for boards and cards (GET/PUT for a user's board, POST for card create, PATCH for card update/move, DELETE for card delete).
+- [x] 6.2 Write unit tests for each endpoint using `pytest` and FastAPI TestClient.
 
-Part 7: Frontend + Backend
+Success criteria (Part 6):
 
-- 7.1 Replace local demo state with API calls to the backend.
-- 7.2 Add optimistic UI updates where reasonable and handle network errors gracefully.
-- 7.3 Add integration tests that exercise save/load flows.
-Success criteria (Part 7): frontend persists board changes to backend and reloads them.
+- [x] Endpoints implemented.
+- [x] Backend unit tests pass.
 
-Part 8: AI connectivity
+## Part 7: Frontend + Backend
 
-- 8.1 Implement a backend route that proxies requests to OpenRouter using the `OPENROUTER_API_KEY` from `.env`.
-- 8.2 Add a simple health/test that sends a trivial prompt ("2+2") and verifies the response shape.
-Success criteria (Part 8): backend can call OpenRouter and receive valid responses in tests (mocked in CI where needed).
+- [x] 7.1 Replace local demo state with API calls to the backend.
+- [x] 7.2 Add optimistic UI updates where reasonable and handle network errors gracefully.
+- [x] 7.3 Add integration tests that exercise save/load flows.
 
-Part 9: Structured Outputs
+Success criteria (Part 7):
 
-- 9.1 Standardize the AI request format: include board JSON, user question, and conversation history.
-- 9.2 Define and document the Structured Output schema the AI should return (user text + optional kanban delta JSON).
-- 9.3 Implement server-side validation of Structured Outputs before applying changes.
-Success criteria (Part 9): AI responses parsed, validated, and optionally applied to the board in tests.
+- [x] Frontend persists board changes to backend.
+- [x] Board state reloads correctly.
 
-Part 10: AI Chat UI
+## Part 8: AI connectivity
 
-- 10.1 Add a sidebar chat UI in the frontend that posts messages to the backend AI route and displays responses.
-- 10.2 When Structured Output contains board updates, apply them and refresh the UI automatically.
-- 10.3 Add end-to-end tests covering a sample chat flow that results in a board update.
-Success criteria (Part 10): chat UI works, AI-driven updates apply correctly, end-to-end tests pass.
+- [x] 8.1 Implement a backend route that proxies requests to OpenRouter using the `OPENROUTER_API_KEY` from `.env`.
+- [x] 8.2 Add a simple live test that sends a trivial prompt (`"2+2"`) and verifies the response shape.
 
-Current status
+Success criteria (Part 8):
 
-- Parts 1 through 7 are implemented.
-- Part 5 is complete with SQLite JSON persistence, auto-created DB on startup, and a `boards` table.
-- Part 6 is complete with backend board/card REST endpoints and pytest coverage.
-- Part 7 is complete with frontend board load/save and card-level API integration.
-- Part 8 is next: OpenRouter integration and AI proxy endpoint.
+- [x] Backend can call OpenRouter live.
+- [x] Tests verify the AI proxy works with a valid response.
 
-Notes and constraints
+## Part 9: Structured Outputs
+
+- [ ] 9.1 Standardize the AI request format: include board JSON, user question, and conversation history.
+- [ ] 9.2 Define and document the Structured Output schema the AI should return (user text + optional kanban delta JSON).
+- [ ] 9.3 Implement server-side validation of Structured Outputs before applying changes.
+
+Success criteria (Part 9):
+
+- [ ] AI responses parsed and validated.
+- [ ] Board updates are applied only when the output passes validation.
+
+## Part 10: AI Chat UI
+
+- [ ] 10.1 Add a sidebar chat UI in the frontend that posts messages to the backend AI route and displays responses.
+- [ ] 10.2 When Structured Output contains board updates, apply them and refresh the UI automatically.
+- [ ] 10.3 Add end-to-end tests covering a sample chat flow that results in a board update.
+
+Success criteria (Part 10):
+
+- [ ] Chat UI works.
+- [ ] AI-driven updates apply correctly.
+- [ ] End-to-end tests pass.
+
+## Notes and constraints
 
 - Use `OPENROUTER_API_KEY` from `.env` for AI calls.
 - Keep the MVP simple—favor JSON-in-SQLite for the Kanban store unless user requests a relational design.
 - Include clear run instructions in both `frontend/AGENTS.md` and this document.
 - Aim for roughly 80% test coverage only when it makes sense; prioritize valuable tests over meeting a metric. Missing 80% is acceptable if the tests are not adding real value.
-
-Part 1: Plan
-
-Enrich this document to plan out each of these parts in detail, with substeps listed out as a checklist to be checked off by the agent, and with tests and success critieria for each. Also create an AGENTS.md file inside the frontend directory that describes the existing code there. Ensure the user checks and approves the plan.
-
-Part 2: Scaffolding
-
-Set up the Docker infrastructure, the backend in backend/ with FastAPI, and write the start and stop scripts in the scripts/ directory. This should serve example static HTML to confirm that a 'hello world' example works running locally and also make an API call.
-
-Part 3: Add in Frontend
-
-Now update so that the frontend is statically built and served, so that the app has the demo Kanban board displayed at /. Comprehensive unit and integration tests.
-
-Part 4: Add in a fake user sign in experience
-
-Now update so that on first hitting /, you need to log in with dummy credentials ("user", "password") in order to see the Kanban, and you can log out. Comprehensive tests.
-
-Part 5: Database modeling
-
-Now propose a database schema for the Kanban, saving it as JSON. Document the database approach in docs/ and get user sign off.
-
-Part 6: Backend
-
-Now add API routes to allow the backend to read and change the Kanban for a given user; test this thoroughly with backend unit tests. The database should be created if it doesn't exist.
-
-Part 7: Frontend + Backend
-
-Now have the frontend actually use the backend API, so that the app is a proper persistent Kanban board. Test very throughly.
-
-Part 8: AI connectivity
-
-Now allow the backend to make an AI call via OpenRouter. Test connectivity with a simple "2+2" test and ensure the AI call is working.
-
-Part 9: Now extend the backend call so that it always calls the AI with the JSON of the Kanban board, plus the user's question (and conversation history). The AI should respond with Structured Outputs that includes the response to the user and optionaly an update to the Kanban. Test thoroughly.
-
-Part 10: Now add a beautiful sidebar widget to the UI supporting full AI chat, and allowing the LLM (as it determines) to update the Kanban based on its Structured Outputs. If the AI updates the Kanban, then the UI should refresh automatically.
