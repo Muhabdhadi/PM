@@ -1,6 +1,6 @@
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse, HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError, field_validator
 import os
 import json
 import secrets
@@ -107,11 +107,71 @@ class AIRequest(BaseModel):
     history: list[dict] | None = None
 
 
+class KanbanColumn(BaseModel):
+    id: str
+    title: str
+    cardIds: list[str]
+
+
+class KanbanCard(BaseModel):
+    id: str
+    title: str
+    details: str
+
+
+class KanbanUpdate(BaseModel):
+    columns: list[KanbanColumn]
+    cards: dict[str, KanbanCard]
+
+
+class StructuredAIResponse(BaseModel):
+    response: str
+    kanbanUpdate: KanbanUpdate | None = None
+
+    @field_validator("response")
+    def response_not_empty(cls, value: str):
+        if not value.strip():
+            raise ValueError("response must not be empty")
+        return value
+
+
 def get_openrouter_api_key() -> str:
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENROUTER_API_KEY is not configured")
     return api_key
+
+
+def extract_json_object(text: str) -> dict:
+    try:
+        return json.loads(text)
+    except ValueError:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            raise ValueError("No valid JSON object found in AI response")
+        return json.loads(text[start : end + 1])
+
+
+def build_ai_messages(board: dict | None, history: list[dict] | None, prompt: str) -> list[dict]:
+    instructions = (
+        "You are an assistant for a Kanban board. "
+        "Respond only with valid JSON matching the schema: {\"response\": string, "
+        "\"kanbanUpdate\": {\"columns\": [...], \"cards\": {...}} }." 
+        "If no board update is required, omit kanbanUpdate or set it to null."
+    )
+    messages = [{"role": "system", "content": instructions}]
+    if board is not None:
+        messages.append(
+            {
+                "role": "system",
+                "content": f"Current board state: {json.dumps(board)}",
+            }
+        )
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": prompt})
+    return messages
 
 
 @app.get("/api/echo")
@@ -125,21 +185,13 @@ def ai_proxy(payload: AIRequest, username: str | None = Depends(get_username_fro
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     api_key = get_openrouter_api_key()
-    messages = []
-    if payload.board is not None:
-        messages.append({
-            "role": "system",
-            "content": f"Current board state: {json.dumps(payload.board)}",
-        })
-    if payload.history:
-        messages.extend(payload.history)
-    messages.append({"role": "user", "content": payload.prompt})
+    messages = build_ai_messages(payload.board, payload.history, payload.prompt)
 
     body = {
         "model": "openai/gpt-oss-120b:free",
         "messages": messages,
         "temperature": 0.2,
-        "max_tokens": 150,
+        "max_tokens": 250,
     }
 
     try:
@@ -172,12 +224,26 @@ def ai_proxy(payload: AIRequest, username: str | None = Depends(get_username_fro
     if content is None:
         raise HTTPException(status_code=502, detail="OpenRouter response missing message content")
 
-    return {
+    try:
+        structured_data = extract_json_object(content)
+        structured = StructuredAIResponse.model_validate(structured_data)
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=502, detail=f"Invalid AI structured output: {exc}")
+
+    response_payload = {
         "status": "ok",
+        "response": structured.response,
+        "boardUpdate": structured.kanbanUpdate.model_dump() if structured.kanbanUpdate else None,
         "model": result.get("model"),
-        "output": content,
         "raw": result,
     }
+
+    if structured.kanbanUpdate is not None:
+        board_object = structured.kanbanUpdate.model_dump()
+        db.upsert_board(username, board_object)
+        response_payload["board"] = board_object
+
+    return response_payload
 
 
 # ----- Card-level CRUD (Part 6) -----

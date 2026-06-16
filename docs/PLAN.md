@@ -118,14 +118,14 @@ Success criteria (Part 8):
 
 ## Part 9: Structured Outputs
 
-- [ ] 9.1 Standardize the AI request format: include board JSON, user question, and conversation history.
-- [ ] 9.2 Define and document the Structured Output schema the AI should return (user text + optional kanban delta JSON).
-- [ ] 9.3 Implement server-side validation of Structured Outputs before applying changes.
+- [x] 9.1 Standardize the AI request format: include board JSON, user question, and conversation history.
+- [x] 9.2 Define and document the Structured Output schema the AI should return (user text + optional kanban delta JSON).
+- [x] 9.3 Implement server-side validation of Structured Outputs before applying changes.
 
 Success criteria (Part 9):
 
-- [ ] AI responses parsed and validated.
-- [ ] Board updates are applied only when the output passes validation.
+- [x] AI responses parsed and validated.
+- [x] Board updates are applied only when the output passes validation.
 
 ## Part 10: AI Chat UI
 
