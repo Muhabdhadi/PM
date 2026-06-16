@@ -12,6 +12,12 @@ VALID_PASSWORD = "password"
 SESSION_COOKIE_NAME = "session_token"
 sessions: dict[str, str] = {}
 
+# Ensure DB exists when module is imported (helps tests and single-process runs)
+try:
+    db.init_db()
+except Exception:
+    pass
+
 
 class LoginData(BaseModel):
     username: str
@@ -88,6 +94,112 @@ def auth_status(username: str | None = Depends(get_username_from_session)):
 @app.get("/api/echo")
 def echo(q: str = "hello"):
     return {"echo": q}
+
+
+# ----- Card-level CRUD (Part 6) -----
+
+
+class CardCreate(BaseModel):
+    id: str | None = None
+    title: str
+    details: str = ""
+    columnId: str
+
+
+class CardUpdate(BaseModel):
+    title: str | None = None
+    details: str | None = None
+    columnId: str | None = None
+    position: int | None = None
+
+
+DEFAULT_BOARD = {
+    "columns": [
+        {"id": "col-backlog", "title": "Backlog", "cardIds": []},
+        {"id": "col-discovery", "title": "Discovery", "cardIds": []},
+        {"id": "col-progress", "title": "In Progress", "cardIds": []},
+        {"id": "col-review", "title": "Review", "cardIds": []},
+        {"id": "col-done", "title": "Done", "cardIds": []},
+    ],
+    "cards": {},
+}
+
+
+def _ensure_board(username: str):
+    board = db.get_board(username)
+    if board is None:
+        db.upsert_board(username, DEFAULT_BOARD)
+        return DEFAULT_BOARD.copy()
+    return board
+
+
+@app.post("/api/cards")
+def create_card(card: CardCreate, username: str | None = Depends(get_username_from_session)):
+    if username is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    board = _ensure_board(username)
+    card_id = card.id or f"card-{secrets.token_hex(4)}"
+    card_obj = {"id": card_id, "title": card.title, "details": card.details}
+    # add to cards
+    board["cards"][card_id] = card_obj
+    # find column
+    col = next((c for c in board["columns"] if c["id"] == card.columnId), None)
+    if col is None:
+        raise HTTPException(status_code=400, detail="Invalid columnId")
+    col["cardIds"].append(card_id)
+    db.upsert_board(username, board)
+    return {"status": "ok", "card": card_obj}
+
+
+@app.patch("/api/cards/{card_id}")
+def update_card(card_id: str, payload: CardUpdate, username: str | None = Depends(get_username_from_session)):
+    if username is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    board = _ensure_board(username)
+    cards = board.get("cards", {})
+    if card_id not in cards:
+        raise HTTPException(status_code=404, detail="Card not found")
+    card = cards[card_id]
+    # update fields
+    if payload.title is not None:
+        card["title"] = payload.title
+    if payload.details is not None:
+        card["details"] = payload.details
+    # handle column move
+    if payload.columnId is not None:
+        # remove from old column
+        for c in board["columns"]:
+            if card_id in c["cardIds"]:
+                c["cardIds"].remove(card_id)
+        # add to new column at position if provided
+        new_col = next((c for c in board["columns"] if c["id"] == payload.columnId), None)
+        if new_col is None:
+            raise HTTPException(status_code=400, detail="Invalid columnId")
+        if payload.position is None or payload.position >= len(new_col["cardIds"]):
+            new_col["cardIds"].append(card_id)
+        else:
+            new_col["cardIds"].insert(payload.position, card_id)
+
+    db.upsert_board(username, board)
+    return {"status": "ok", "card": card}
+
+
+@app.delete("/api/cards/{card_id}")
+def delete_card(card_id: str, username: str | None = Depends(get_username_from_session)):
+    if username is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    board = _ensure_board(username)
+    cards = board.get("cards", {})
+    if card_id not in cards:
+        raise HTTPException(status_code=404, detail="Card not found")
+    # remove from columns
+    for c in board["columns"]:
+        if card_id in c["cardIds"]:
+            c["cardIds"].remove(card_id)
+    # remove card
+    cards.pop(card_id, None)
+    db.upsert_board(username, board)
+    return {"status": "ok"}
 
 
 @app.get("/{full_path:path}")
