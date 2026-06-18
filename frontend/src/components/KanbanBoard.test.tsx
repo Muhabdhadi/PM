@@ -13,11 +13,21 @@ const getFirstColumn = () => screen.getAllByTestId(/column-/i)[0];
 
 describe("KanbanBoard", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ board: initialData }),
-    })));
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.endsWith("/api/board") || url.endsWith("/api/board")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ board: initialData }),
+        } as any;
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ status: "ok", response: "ok" }),
+      } as any;
+    }));
   });
 
   afterEach(() => {
@@ -57,5 +67,38 @@ describe("KanbanBoard", () => {
     await waitFor(() => expect(detailsInput).toHaveValue("Notes"));
 
     expect(screen.getByRole("button", { name: /add card/i })).toBeInTheDocument();
+  });
+
+  it("sends a chat message and applies a board update", async () => {
+    // override fetch to return a structured board update when /api/ai is called
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.endsWith("/api/board")) {
+        return { ok: true, status: 200, json: async () => ({ board: initialData }) } as any;
+      }
+      if (url.endsWith("/api/ai")) {
+        const body = init?.body ? JSON.parse(String(init.body)) : {};
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            status: "ok",
+            response: "Applied update",
+            boardUpdate: { columns: [{ id: "col-backlog", title: "Backlog", cardIds: [] }], cards: {} },
+          }),
+        } as any;
+      }
+      return { ok: true, status: 200, json: async () => ({}) } as any;
+    }));
+
+    render(<KanbanBoard />);
+    // type in the chat input
+    const input = await screen.findByPlaceholderText(/Ask the AI/i);
+    await userEvent.type(input, "Update board to minimal\n");
+    const send = screen.getByRole("button", { name: /send/i });
+    await userEvent.click(send);
+
+    // after the AI response, the board should be updated with the backlog column
+    await waitFor(() => expect(screen.getAllByTestId(/column-/i)[0]).toBeInTheDocument());
   });
 });

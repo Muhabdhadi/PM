@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/core";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
+import ChatSidebar from "@/components/ChatSidebar";
 import {
   createId,
   findColumnId,
@@ -171,7 +172,7 @@ export const KanbanBoard = () => {
     };
   }, [router]);
 
-  const activeCard = activeCardId ? cardsById[activeCardId] : null;
+  const activeCard = activeCardId ? cardsById[activeCardId] ?? null : null;
 
   return (
     <div className="relative overflow-hidden">
@@ -233,7 +234,7 @@ export const KanbanBoard = () => {
               <KanbanColumn
                 key={column.id}
                 column={column}
-                cards={column.cardIds.map((cardId) => board.cards[cardId])}
+                cards={column.cardIds.map((cardId) => board.cards[cardId]).filter(Boolean)}
                 onRename={handleRenameColumn}
                 onAddCard={handleAddCard}
                 onDeleteCard={handleDeleteCard}
@@ -248,6 +249,7 @@ export const KanbanBoard = () => {
             ) : null}
           </DragOverlay>
         </DndContext>
+        <ChatSidebar board={board} onApplyBoard={(b) => setBoard(b)} />
       </main>
     </div>
   );
