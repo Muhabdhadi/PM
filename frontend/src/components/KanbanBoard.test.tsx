@@ -15,7 +15,7 @@ describe("KanbanBoard", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo) => {
       const url = typeof input === "string" ? input : (input as Request).url;
-      if (url.endsWith("/api/board") || url.endsWith("/api/board")) {
+      if (url.endsWith("/api/board")) {
         return {
           ok: true,
           status: 200,

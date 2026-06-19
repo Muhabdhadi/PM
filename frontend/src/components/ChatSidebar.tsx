@@ -1,10 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import type { BoardData } from "@/lib/kanban";
 
 type Message = { role: "user" | "assistant"; text: string };
 
-export default function ChatSidebar({ board, onApplyBoard }: { board: any; onApplyBoard: (b: any) => void }) {
+export default function ChatSidebar({
+  board,
+  onApplyBoard,
+}: {
+  board: BoardData;
+  onApplyBoard: (b: BoardData) => void;
+}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,14 +31,16 @@ export default function ChatSidebar({ board, onApplyBoard }: { board: any; onApp
       });
       if (!res.ok) throw new Error("AI request failed");
       const data = await res.json();
-      const aiText = data.response || (typeof data.output === "string" ? data.output : JSON.stringify(data.output));
+      const aiText =
+        data.response ||
+        (typeof data.output === "string" ? data.output : JSON.stringify(data.output));
       setMessages((m) => [...m, { role: "assistant", text: aiText }]);
       if (data.boardUpdate) {
-        onApplyBoard(data.boardUpdate);
+        onApplyBoard(data.boardUpdate as BoardData);
       } else if (data.board) {
-        onApplyBoard(data.board);
+        onApplyBoard(data.board as BoardData);
       }
-    } catch (err) {
+    } catch {
       setMessages((m) => [...m, { role: "assistant", text: "(AI call failed)" }]);
     } finally {
       setLoading(false);
@@ -43,7 +52,14 @@ export default function ChatSidebar({ board, onApplyBoard }: { board: any; onApp
       <h3 className="mb-2 text-sm font-semibold text-[var(--navy-dark)]">AI Assistant</h3>
       <div className="mb-3 max-h-64 overflow-y-auto space-y-2">
         {messages.map((m, i) => (
-          <div key={i} className={m.role === "user" ? "text-right text-sm" : "text-left text-sm text-[var(--gray-text)]"}>
+          <div
+            key={i}
+            className={
+              m.role === "user"
+                ? "text-right text-sm"
+                : "text-left text-sm text-[var(--gray-text)]"
+            }
+          >
             <div>{m.text}</div>
           </div>
         ))}
@@ -58,7 +74,11 @@ export default function ChatSidebar({ board, onApplyBoard }: { board: any; onApp
             if (e.key === "Enter") send();
           }}
         />
-        <button disabled={loading} onClick={send} className="rounded-md bg-[var(--primary-blue)] px-3 py-2 text-white">
+        <button
+          disabled={loading}
+          onClick={send}
+          className="rounded-md bg-[var(--primary-blue)] px-3 py-2 text-white"
+        >
           {loading ? "..." : "Send"}
         </button>
       </div>

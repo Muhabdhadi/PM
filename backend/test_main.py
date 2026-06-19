@@ -5,24 +5,21 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 
-import main
+import ai
 from main import app
 
-client = TestClient(app)
 
-
-def test_health_endpoint():
+def test_health_endpoint(client):
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_login_sets_session_cookie_and_auth_status():
+def test_login_sets_session_cookie_and_auth_status(client):
     response = client.post(
         "/api/login",
         json={"username": "user", "password": "password"},
     )
-
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
     assert "session_token" in response.cookies
@@ -32,7 +29,7 @@ def test_login_sets_session_cookie_and_auth_status():
     assert auth_response.json() == {"authenticated": True, "username": "user"}
 
 
-def test_logout_clears_session():
+def test_logout_clears_session(client):
     login_response = client.post(
         "/api/login",
         json={"username": "user", "password": "password"},
@@ -48,7 +45,7 @@ def test_logout_clears_session():
     assert auth_response.json() == {"authenticated": False, "username": None}
 
 
-def test_invalid_login_rejected():
+def test_invalid_login_rejected(client):
     response = client.post(
         "/api/login",
         json={"username": "user", "password": "wrong"},
@@ -57,7 +54,7 @@ def test_invalid_login_rejected():
     assert response.json()["detail"] == "Invalid credentials"
 
 
-def test_ai_proxy_applies_valid_structured_output(monkeypatch):
+def test_ai_proxy_applies_valid_structured_output(client, monkeypatch):
     login_response = client.post(
         "/api/login",
         json={"username": "user", "password": "password"},
@@ -84,7 +81,7 @@ def test_ai_proxy_applies_valid_structured_output(monkeypatch):
     }
     mock_response.text = json.dumps(mock_response.json.return_value)
 
-    monkeypatch.setattr(main.requests, "post", lambda *args, **kwargs: mock_response)
+    monkeypatch.setattr(ai.requests, "post", lambda *args, **kwargs: mock_response)
 
     response = client.post(
         "/api/ai",
@@ -106,7 +103,7 @@ def test_ai_proxy_applies_valid_structured_output(monkeypatch):
     assert persisted.json()["board"]["columns"][0]["id"] == "col-backlog"
 
 
-def test_ai_proxy_rejects_invalid_structured_output(monkeypatch):
+def test_ai_proxy_rejects_invalid_structured_output(client, monkeypatch):
     login_response = client.post(
         "/api/login",
         json={"username": "user", "password": "password"},
@@ -125,7 +122,7 @@ def test_ai_proxy_rejects_invalid_structured_output(monkeypatch):
     }
     mock_response.text = json.dumps(mock_response.json.return_value)
 
-    monkeypatch.setattr(main.requests, "post", lambda *args, **kwargs: mock_response)
+    monkeypatch.setattr(ai.requests, "post", lambda *args, **kwargs: mock_response)
 
     response = client.post(
         "/api/ai",
@@ -136,7 +133,7 @@ def test_ai_proxy_rejects_invalid_structured_output(monkeypatch):
     assert "Invalid AI structured output" in response.json()["detail"]
 
 
-def test_ai_proxy_calls_openrouter_live():
+def test_ai_proxy_calls_openrouter_live(client):
     if not os.getenv("OPENROUTER_API_KEY"):
         pytest.skip("OPENROUTER_API_KEY is not set")
 

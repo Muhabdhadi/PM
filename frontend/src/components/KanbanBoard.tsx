@@ -44,13 +44,14 @@ export const KanbanBoard = () => {
 
   const saveBoard = async (nextBoard: BoardData) => {
     try {
-      await fetch("/api/board", {
+      const res = await fetch("/api/board", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nextBoard),
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err) {
-      // no-op on save failure
+      console.error("Failed to save board:", err);
     }
   };
 
@@ -62,28 +63,30 @@ export const KanbanBoard = () => {
     const { active, over } = event;
     setActiveCardId(null);
 
-    if (!over || active.id === over.id) {
-      return;
-    }
+    if (!over || active.id === over.id) return;
 
-    setBoard((prev) => {
-      const nextColumns = moveCard(prev.columns, active.id as string, over.id as string);
-      const nextBoard = { ...prev, columns: nextColumns };
-      const newColumnId = findColumnId(nextColumns, active.id as string);
-      const position = getCardPosition(nextColumns, active.id as string);
+    // Capture current state before the optimistic update for possible revert
+    const prevBoard = board;
+    const nextColumns = moveCard(board.columns, active.id as string, over.id as string);
+    const nextBoard = { ...board, columns: nextColumns };
+    setBoard(nextBoard);
 
-      if (newColumnId && position !== -1) {
-        fetch(`/api/cards/${active.id}`, {
+    const newColumnId = findColumnId(nextColumns, active.id as string);
+    const position = getCardPosition(nextColumns, active.id as string);
+
+    if (newColumnId && position !== -1) {
+      try {
+        const res = await fetch(`/api/cards/${active.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ columnId: newColumnId, position }),
-        }).catch(() => {
-          // ignore move failures for now
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        console.error("Failed to persist card move:", err);
+        setBoard(prevBoard);
       }
-
-      return nextBoard;
-    });
+    }
   };
 
   const handleRenameColumn = (columnId: string, title: string) => {
@@ -101,54 +104,63 @@ export const KanbanBoard = () => {
 
   const handleAddCard = (columnId: string, title: string, details: string) => {
     const id = createId("card");
-    setBoard((prev) => {
-      const nextBoard = {
+    const newCard = { id, title, details: details || "No details yet." };
+
+    setBoard((prev) => ({
+      ...prev,
+      cards: { ...prev.cards, [id]: newCard },
+      columns: prev.columns.map((col) =>
+        col.id === columnId ? { ...col, cardIds: [...col.cardIds, id] } : col
+      ),
+    }));
+
+    fetch("/api/cards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...newCard, columnId }),
+    }).catch((err) => {
+      console.error("Failed to persist card create:", err);
+      setBoard((prev) => ({
         ...prev,
-        cards: {
-          ...prev.cards,
-          [id]: { id, title, details: details || "No details yet." },
-        },
-        columns: prev.columns.map((column) =>
-          column.id === columnId
-            ? { ...column, cardIds: [...column.cardIds, id] }
-            : column
+        cards: Object.fromEntries(Object.entries(prev.cards).filter(([k]) => k !== id)),
+        columns: prev.columns.map((col) =>
+          col.id === columnId
+            ? { ...col, cardIds: col.cardIds.filter((cid) => cid !== id) }
+            : col
         ),
-      };
-      fetch("/api/cards", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...nextBoard.cards[id], columnId }),
-      }).catch(() => {
-        // ignore create failures for now
-      });
-      return nextBoard;
+      }));
     });
   };
 
   const handleDeleteCard = (columnId: string, cardId: string) => {
-    setBoard((prev) => {
-      const nextBoard = {
-        ...prev,
-        cards: Object.fromEntries(
-          Object.entries(prev.cards).filter(([id]) => id !== cardId)
-        ),
-        columns: prev.columns.map((column) =>
-          column.id === columnId
-            ? {
-                ...column,
-                cardIds: column.cardIds.filter((id) => id !== cardId),
-              }
-            : column
-        ),
-      };
-      fetch(`/api/cards/${cardId}`, { method: "DELETE" }).catch(() => {
-        // ignore delete failures for now
-      });
-      return nextBoard;
+    const deletedCard = board.cards[cardId];
+
+    setBoard((prev) => ({
+      ...prev,
+      cards: Object.fromEntries(Object.entries(prev.cards).filter(([id]) => id !== cardId)),
+      columns: prev.columns.map((col) =>
+        col.id === columnId
+          ? { ...col, cardIds: col.cardIds.filter((id) => id !== cardId) }
+          : col
+      ),
+    }));
+
+    fetch(`/api/cards/${cardId}`, { method: "DELETE" }).catch((err) => {
+      console.error("Failed to persist card delete:", err);
+      if (deletedCard) {
+        setBoard((prev) => ({
+          ...prev,
+          cards: { ...prev.cards, [cardId]: deletedCard },
+          columns: prev.columns.map((col) =>
+            col.id === columnId
+              ? { ...col, cardIds: [...col.cardIds, cardId] }
+              : col
+          ),
+        }));
+      }
     });
   };
 
-  // Load board from backend on mount
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -163,7 +175,7 @@ export const KanbanBoard = () => {
         if (data && data.board) {
           setBoard(data.board as BoardData);
         }
-      } catch (err) {
+      } catch {
         // network failure — keep initial data
       }
     })();
