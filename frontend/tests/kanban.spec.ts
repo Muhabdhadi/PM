@@ -1,5 +1,25 @@
 import { expect, test } from "@playwright/test";
 
+const SEED_BOARD = {
+  columns: [
+    { id: "col-backlog", title: "Backlog", cardIds: ["card-1"] },
+    { id: "col-discovery", title: "Discovery", cardIds: [] },
+    { id: "col-progress", title: "In Progress", cardIds: [] },
+    { id: "col-review", title: "Review", cardIds: [] },
+    { id: "col-done", title: "Done", cardIds: [] },
+  ],
+  cards: {
+    "card-1": { id: "card-1", title: "Seed card", details: "" },
+  },
+};
+
+test.beforeEach(async ({ page }) => {
+  await page.request.post("/api/login", {
+    data: { username: "user", password: "password" },
+  });
+  await page.request.put("/api/board", { data: SEED_BOARD });
+});
+
 test("loads the kanban board", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();

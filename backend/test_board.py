@@ -1,8 +1,19 @@
 from fastapi.testclient import TestClient
 
-from main import app
+from main import app, DEFAULT_BOARD
 
 client = TestClient(app)
+
+FRESH_BOARD = {
+    "columns": [
+        {"id": "col-backlog", "title": "Backlog", "cardIds": []},
+        {"id": "col-discovery", "title": "Discovery", "cardIds": []},
+        {"id": "col-progress", "title": "In Progress", "cardIds": []},
+        {"id": "col-review", "title": "Review", "cardIds": []},
+        {"id": "col-done", "title": "Done", "cardIds": []},
+    ],
+    "cards": {},
+}
 
 
 def login():
@@ -13,7 +24,10 @@ def login():
 def test_create_update_delete_card_flow():
     login()
 
-    # ensure board exists
+    # reset board to a known clean state so the test is self-contained
+    resp = client.put("/api/board", json=FRESH_BOARD)
+    assert resp.status_code == 200
+
     resp = client.get("/api/board")
     assert resp.status_code == 200
     board = resp.json()["board"]
