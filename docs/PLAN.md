@@ -12,8 +12,8 @@ This document is the master plan. Each Part below contains concrete substeps, te
 - [x] Part 6: Backend
 - [x] Part 7: Frontend + Backend
 - [x] Part 8: AI connectivity
-- [ ] Part 9: Structured Outputs
-- [ ] Part 10: AI Chat UI
+- [x] Part 9: Structured Outputs
+- [x] Part 10: AI Chat UI
 
 ## Part 1: Plan (deliverables)
 
@@ -129,15 +129,15 @@ Success criteria (Part 9):
 
 ## Part 10: AI Chat UI
 
-- [ ] 10.1 Add a sidebar chat UI in the frontend that posts messages to the backend AI route and displays responses.
-- [ ] 10.2 When Structured Output contains board updates, apply them and refresh the UI automatically.
-- [ ] 10.3 Add end-to-end tests covering a sample chat flow that results in a board update.
+- [x] 10.1 Add a sidebar chat UI in the frontend that posts messages to the backend AI route and displays responses.
+- [x] 10.2 When Structured Output contains board updates, apply them and refresh the UI automatically.
+- [x] 10.3 Add end-to-end tests covering a sample chat flow that results in a board update.
 
 Success criteria (Part 10):
 
-- [ ] Chat UI works.
-- [ ] AI-driven updates apply correctly.
-- [ ] End-to-end tests pass.
+- [x] Chat UI works.
+- [x] AI-driven updates apply correctly.
+- [x] End-to-end tests pass.
 
 ## Notes and constraints
 
