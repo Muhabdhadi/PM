@@ -139,6 +139,54 @@ Success criteria (Part 10):
 - [x] AI-driven updates apply correctly.
 - [x] End-to-end tests pass.
 
+## Post-MVP: Code Review and Hardening
+
+Completed after Part 10. A comprehensive code review was written to `docs/CODE_REVIEW.md` covering 3 critical, 4 high, 8 medium, and 8 low severity findings. All 23 findings were remediated and all tests re-run to confirm.
+
+### Security fixes
+- [x] C-1 — API key removed from version control; `.env` confirmed in `.gitignore`
+- [x] C-2 — Credentials loaded from env vars (`APP_USERNAME`, `APP_PASSWORD`); `secrets.compare_digest` used for constant-time comparison
+- [x] C-3 — Sessions moved from in-memory dict to SQLite `sessions` table with 24-hour TTL
+- [x] M-1 — Rate limiting on `/api/login` via `slowapi` (10 requests/min per IP)
+- [x] M-2 — Session cookie hardened: `httponly=True`, `secure` from env, `samesite="strict"`
+- [x] H-1 — `AIRequest` fields bounded: `prompt` max 2 000 chars, `history` max 50 items; board JSON truncated to 8 000 chars
+
+### Correctness fixes
+- [x] H-2 — Removed incompatible `rewrites()` from `next.config.ts` (static export mode)
+- [x] H-3 — Fixed `httpx2` typo → `httpx` in `requirements.txt`
+- [x] H-4 — Replaced shallow `dict.copy()` with `copy.deepcopy()` for `DEFAULT_BOARD`
+- [x] M-4 — `PUT /api/board` now validates body against `KanbanUpdate` Pydantic model
+- [x] M-7 — AI board update merges onto existing board rather than replacing it
+
+### Robustness / maintainability fixes
+- [x] M-3 — Frontend API mutations revert optimistic state on failure and log errors
+- [x] M-5 — Sessions include `expires_at`; tokens older than 24 hours are rejected
+- [x] M-6 — Thread-local SQLite connections replace per-request `connect()` calls
+- [x] M-8 — `ChatSidebar` props typed with `BoardData` instead of `any`
+- [x] L-1 — `createId()` uses `crypto.randomUUID()` instead of `Math.random()`
+- [x] L-2 — `@app.on_event("startup")` replaced with `lifespan` context manager
+- [x] L-3 — `datetime.utcnow()` replaced with `datetime.now(timezone.utc)`
+- [x] L-5 — Duplicate condition in `KanbanBoard.test.tsx` fetch mock fixed
+- [x] L-6 — `position` field validated with `ge=0` in `CardUpdate`
+- [x] L-7 — `CardCreate.title` and `details` bounded with `min_length` / `max_length`
+
+### Testing improvements
+- [x] L-4 — `conftest.py` added: each test gets an isolated SQLite DB via `tmp_path`; `TestClient` provided as a fixture
+- [x] L-8 — E2E tests moved to port 8000; `globalSetup` builds frontend and copies to `backend/static/`; Playwright boots the real backend
+
+## Post-MVP: Backend Refactoring
+
+Completed after the code-review hardening. `backend/main.py` (previously ~230 lines handling everything) was split into focused modules:
+
+- [x] `config.py` — env-var loading, constants, shared `slowapi` `Limiter` instance
+- [x] `models.py` — all Pydantic request/response models
+- [x] `auth.py` — auth router + `get_username_from_session` FastAPI dependency
+- [x] `board.py` — board router and card CRUD endpoints
+- [x] `ai.py` — AI proxy router, message builder, JSON extractor
+- [x] `main.py` — thin app factory: creates `FastAPI`, registers middleware, mounts routers, serves static files (~45 lines)
+
+All 18 tests (8 backend + 7 unit + 3 e2e) pass after the refactor.
+
 ## Notes and constraints
 
 - Use `OPENROUTER_API_KEY` from `.env` for AI calls.
