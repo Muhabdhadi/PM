@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { BoardSidebar } from "@/components/BoardSidebar";
+import { ShareDialog } from "@/components/ShareDialog";
 import * as api from "@/lib/api";
 import type { BoardSummary } from "@/lib/api";
 
@@ -13,6 +14,7 @@ export default function Workspace({ username }: { username: string | null }) {
   const [activeId, setActiveId] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sharingBoardId, setSharingBoardId] = useState<number | null>(null);
 
   const refreshBoards = useCallback(
     async (preferredId?: number) => {
@@ -104,6 +106,7 @@ export default function Workspace({ username }: { username: string | null }) {
             onCreate={handleCreate}
             onRename={handleRename}
             onDelete={handleDelete}
+            onShare={setSharingBoardId}
             onLogout={handleLogout}
           />
         </aside>
@@ -125,6 +128,7 @@ export default function Workspace({ username }: { username: string | null }) {
                 onCreate={handleCreate}
                 onRename={handleRename}
                 onDelete={handleDelete}
+                onShare={setSharingBoardId}
                 onLogout={handleLogout}
               />
             </div>
@@ -152,6 +156,14 @@ export default function Workspace({ username }: { username: string | null }) {
           )}
         </main>
       </div>
+
+      {sharingBoardId != null && (
+        <ShareDialog
+          boardId={sharingBoardId}
+          boardName={boards.find((b) => b.id === sharingBoardId)?.name ?? "board"}
+          onClose={() => setSharingBoardId(null)}
+        />
+      )}
     </div>
   );
 }

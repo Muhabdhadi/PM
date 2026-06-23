@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 import db
 from db import DEFAULT_BOARD  # re-exported for tests/back-compat
 from auth import require_user
-from models import BoardCreate, BoardRename, CardCreate, CardUpdate, KanbanUpdate
+from models import BoardCreate, BoardRename, CardCreate, CardUpdate, KanbanUpdate, MemberAdd
 
 router = APIRouter()
 
@@ -13,23 +13,29 @@ __all__ = ["router", "DEFAULT_BOARD"]
 
 
 def _resolve_board_id(user: dict, board_id: int | None) -> int:
-    """Return an owned board id, defaulting to the user's first board."""
+    """Return an accessible board id (owned or shared), defaulting to the user's first board."""
     if board_id is None:
         return db.get_or_create_default_board(user["id"])
+    if not db.user_can_access_board(board_id, user["id"]):
+        raise HTTPException(status_code=404, detail="Board not found")
+    return board_id
+
+
+def _require_owned_board(user: dict, board_id: int) -> dict:
     row = db.get_board_row(board_id)
     if row is None or row["owner_id"] != user["id"]:
         raise HTTPException(status_code=404, detail="Board not found")
-    return board_id
+    return row
 
 
 # --- Board collection ----------------------------------------------------
 
 @router.get("/api/boards")
 def list_boards(user=Depends(require_user)):
-    boards = db.list_boards(user["id"])
+    boards = db.list_accessible_boards(user["id"])
     if not boards:
         db.get_or_create_default_board(user["id"])
-        boards = db.list_boards(user["id"])
+        boards = db.list_accessible_boards(user["id"])
     return {"boards": boards}
 
 
@@ -41,16 +47,44 @@ def create_board(payload: BoardCreate, user=Depends(require_user)):
 
 @router.patch("/api/boards/{board_id}")
 def rename_board(board_id: int, payload: BoardRename, user=Depends(require_user)):
-    _resolve_board_id(user, board_id)
+    _require_owned_board(user, board_id)
     db.rename_board(board_id, payload.name)
     return {"status": "ok", "board": {"id": board_id, "name": payload.name}}
 
 
 @router.delete("/api/boards/{board_id}")
 def delete_board(board_id: int, user=Depends(require_user)):
-    _resolve_board_id(user, board_id)
+    _require_owned_board(user, board_id)
     db.delete_board(board_id)
     return {"status": "ok"}
+
+
+# --- Board collaborators -------------------------------------------------
+
+@router.get("/api/boards/{board_id}/members")
+def list_members(board_id: int, user=Depends(require_user)):
+    if not db.user_can_access_board(board_id, user["id"]):
+        raise HTTPException(status_code=404, detail="Board not found")
+    return {"members": db.list_board_members(board_id)}
+
+
+@router.post("/api/boards/{board_id}/members", status_code=201)
+def add_member(board_id: int, payload: MemberAdd, user=Depends(require_user)):
+    board = _require_owned_board(user, board_id)
+    target = db.get_user_by_username(payload.username)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target["id"] == board["owner_id"]:
+        raise HTTPException(status_code=409, detail="User already owns this board")
+    db.add_board_member(board_id, target["id"])
+    return {"status": "ok", "members": db.list_board_members(board_id)}
+
+
+@router.delete("/api/boards/{board_id}/members/{member_id}")
+def remove_member(board_id: int, member_id: int, user=Depends(require_user)):
+    _require_owned_board(user, board_id)
+    db.remove_board_member(board_id, member_id)
+    return {"status": "ok", "members": db.list_board_members(board_id)}
 
 
 # --- Single board kanban -------------------------------------------------

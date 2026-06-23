@@ -78,3 +78,17 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
   multi-board architecture, new endpoints, modules, components, and test counts.
 - 21 backend + 32 frontend unit + 10 e2e all green.
 - Next: board collaboration/sharing (own iteration), activity log, further a11y.
+
+### Iteration 4
+- Board collaboration / sharing:
+  - DB: `board_members` table; `list_accessible_boards`, `user_can_access_board`,
+    `add_board_member`, `remove_board_member`, `list_board_members`.
+  - API: `GET/POST /api/boards/{id}/members`, `DELETE .../members/{user_id}`.
+    Access = owner or member; rename/delete/share owner-only (404 otherwise).
+  - Frontend: `ShareDialog` (list/invite/remove); `BoardSidebar` shows shared
+    boards ("shared by X"), hides owner-only actions, adds a Share button;
+    `Workspace` wires the dialog; `api.ts` member helpers + role/owner fields.
+  - Tests: `test_sharing.py` (4 access-control tests); ShareDialog (4) +
+    BoardSidebar shared-behavior (2) unit tests; collaboration e2e (invite+revoke).
+  - Docs (README + CLAUDE) updated. 25 backend + 38 frontend unit + 11 e2e green.
+- Next: activity log; further a11y/UX polish.

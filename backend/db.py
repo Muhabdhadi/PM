@@ -100,7 +100,17 @@ def init_db(db_path: str | None = None):
                 expires_at TEXT NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS board_members (
+                board_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                role TEXT NOT NULL DEFAULT 'editor',
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (board_id, user_id),
+                FOREIGN KEY (board_id) REFERENCES boards(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
             CREATE INDEX IF NOT EXISTS idx_boards_owner ON boards(owner_id);
+            CREATE INDEX IF NOT EXISTS idx_members_user ON board_members(user_id);
             """
         )
         conn.commit()
@@ -278,6 +288,83 @@ def count_boards(owner_id: int, db_path: str | None = None) -> int:
         return conn.execute(
             "SELECT COUNT(*) AS n FROM boards WHERE owner_id=?", (owner_id,)
         ).fetchone()["n"]
+
+
+def list_accessible_boards(user_id: int, db_path: str | None = None) -> list[dict]:
+    """Boards the user owns plus boards shared with them, tagged with role + owner."""
+    with _conn(db_path) as conn:
+        owned = conn.execute(
+            "SELECT id, name, position, created_at, updated_at FROM boards "
+            "WHERE owner_id=? ORDER BY position, id",
+            (user_id,),
+        ).fetchall()
+        shared = conn.execute(
+            """
+            SELECT b.id, b.name, b.position, b.created_at, b.updated_at,
+                   m.role AS role, u.username AS owner
+            FROM board_members m
+            JOIN boards b ON b.id = m.board_id
+            JOIN users u ON u.id = b.owner_id
+            WHERE m.user_id = ?
+            ORDER BY b.position, b.id
+            """,
+            (user_id,),
+        ).fetchall()
+    result = [{**dict(r), "role": "owner", "owner": None} for r in owned]
+    result.extend(dict(r) for r in shared)
+    return result
+
+
+def user_can_access_board(board_id: int, user_id: int, db_path: str | None = None) -> bool:
+    with _conn(db_path) as conn:
+        row = conn.execute(
+            """
+            SELECT 1 FROM boards WHERE id=? AND owner_id=?
+            UNION
+            SELECT 1 FROM board_members WHERE board_id=? AND user_id=?
+            """,
+            (board_id, user_id, board_id, user_id),
+        ).fetchone()
+    return row is not None
+
+
+def add_board_member(board_id: int, user_id: int, role: str = "editor", db_path: str | None = None):
+    with _conn(db_path) as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO board_members (board_id, user_id, role, created_at) "
+            "VALUES (?, ?, ?, ?)",
+            (board_id, user_id, role, _now()),
+        )
+        conn.commit()
+
+
+def remove_board_member(board_id: int, user_id: int, db_path: str | None = None):
+    with _conn(db_path) as conn:
+        conn.execute(
+            "DELETE FROM board_members WHERE board_id=? AND user_id=?", (board_id, user_id)
+        )
+        conn.commit()
+
+
+def list_board_members(board_id: int, db_path: str | None = None) -> list[dict]:
+    """Owner first (role='owner'), then editors, each with user_id + username."""
+    with _conn(db_path) as conn:
+        owner = conn.execute(
+            "SELECT u.id AS user_id, u.username AS username FROM boards b "
+            "JOIN users u ON u.id = b.owner_id WHERE b.id=?",
+            (board_id,),
+        ).fetchone()
+        members = conn.execute(
+            "SELECT u.id AS user_id, u.username AS username, m.role AS role "
+            "FROM board_members m JOIN users u ON u.id = m.user_id "
+            "WHERE m.board_id=? ORDER BY u.username",
+            (board_id,),
+        ).fetchall()
+    result = []
+    if owner:
+        result.append({**dict(owner), "role": "owner"})
+    result.extend(dict(m) for m in members)
+    return result
 
 
 def get_or_create_default_board(owner_id: int, db_path: str | None = None) -> int:

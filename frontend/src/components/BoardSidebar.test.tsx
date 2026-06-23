@@ -20,6 +20,7 @@ const renderSidebar = (overrides: Partial<Parameters<typeof BoardSidebar>[0]> = 
     onCreate: noop,
     onRename: noop,
     onDelete: noop,
+    onShare: noop,
     onLogout: noop,
     ...overrides,
   };
@@ -76,5 +77,25 @@ describe("BoardSidebar", () => {
     renderSidebar({ onLogout });
     await userEvent.click(screen.getByRole("button", { name: /sign out/i }));
     expect(onLogout).toHaveBeenCalled();
+  });
+
+  it("shares an owned board", async () => {
+    const onShare = vi.fn();
+    renderSidebar({ onShare });
+    await userEvent.click(screen.getByRole("button", { name: /share roadmap/i }));
+    expect(onShare).toHaveBeenCalledWith(2);
+  });
+
+  it("hides owner-only actions for shared boards", () => {
+    renderSidebar({
+      boards: [
+        { id: 9, name: "Team Board", position: 0, created_at: "", updated_at: "", role: "editor", owner: "alice" },
+      ],
+      activeId: 9,
+    });
+    expect(screen.getByText(/shared by alice/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /rename team board/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /delete team board/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /share team board/i })).not.toBeInTheDocument();
   });
 });

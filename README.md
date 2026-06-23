@@ -7,6 +7,7 @@ A multi-user Kanban project management web app with a Next.js frontend and a Fas
 - **User accounts** — self-service registration plus login, with PBKDF2-hashed passwords. A default `user` / `password` account is seeded (credentials configurable via env vars).
 - **Per-user data isolation** — each user only sees their own boards and cards.
 - **Multiple boards per user** — create, rename, switch, and delete boards from the workspace sidebar.
+- **Board collaboration** — owners can share a board with other users by username; collaborators (editors) can view and edit but cannot rename, delete, or re-share. Access is enforced server-side.
 - **Customizable columns** — add and remove columns per board (defaults: Backlog → Discovery → In Progress → Review → Done).
 - **Rich cards** — title, description, priority (low/medium/high), due date (with overdue highlighting), labels, and an assignee. Cards are created, edited (modal), moved via drag-and-drop, and deleted.
 - **Search & filter** — filter visible cards by text, priority, and label; a board summary shows total / done / overdue counts.
@@ -68,19 +69,19 @@ npm run dev        # http://localhost:3000
 
 ## Run tests
 
-**Backend tests** (21 tests):
+**Backend tests** (25 tests):
 ```powershell
 cd backend
 py -m pytest -v
 ```
 
-**Frontend unit tests** (32 tests):
+**Frontend unit tests** (38 tests):
 ```powershell
 cd frontend
 npm run test:unit
 ```
 
-**End-to-end tests** (10 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
+**End-to-end tests** (11 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
 ```powershell
 cd frontend
 npx playwright test
@@ -112,7 +113,10 @@ The Docker build compiles the frontend, copies the static output to `backend/sta
 | `GET` | `/api/boards` | List the user's boards |
 | `POST` | `/api/boards` | Create a board |
 | `PATCH` | `/api/boards/{id}` | Rename a board |
-| `DELETE` | `/api/boards/{id}` | Delete a board |
+| `DELETE` | `/api/boards/{id}` | Delete a board (owner only) |
+| `GET` | `/api/boards/{id}/members` | List a board's owner + collaborators |
+| `POST` | `/api/boards/{id}/members` | Share with a user by username (owner only) |
+| `DELETE` | `/api/boards/{id}/members/{userId}` | Revoke a collaborator (owner only) |
 | `GET` | `/api/board?board_id=` | Fetch a board's Kanban (defaults to the user's first board) |
 | `PUT` | `/api/board?board_id=` | Replace board state (schema-validated) |
 | `POST` | `/api/cards?board_id=` | Create a card |

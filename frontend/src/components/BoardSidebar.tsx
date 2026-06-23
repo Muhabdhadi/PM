@@ -12,8 +12,11 @@ type BoardSidebarProps = {
   onCreate: (name: string) => void;
   onRename: (id: number, name: string) => void;
   onDelete: (id: number) => void;
+  onShare: (id: number) => void;
   onLogout: () => void;
 };
+
+const isOwned = (board: BoardSummary) => board.role !== "editor";
 
 export const BoardSidebar = ({
   boards,
@@ -23,8 +26,10 @@ export const BoardSidebar = ({
   onCreate,
   onRename,
   onDelete,
+  onShare,
   onLogout,
 }: BoardSidebarProps) => {
+  const ownedCount = boards.filter(isOwned).length;
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -91,29 +96,46 @@ export const BoardSidebar = ({
                 data-testid={`board-tab-${b.id}`}
               >
                 {b.name}
+                {!isOwned(b) && b.owner ? (
+                  <span className="ml-1 block truncate text-[10px] font-normal text-[var(--gray-text)]">
+                    shared by {b.owner}
+                  </span>
+                ) : null}
               </button>
-              <button
-                type="button"
-                aria-label={`Rename ${b.name}`}
-                onClick={() => {
-                  setEditingId(b.id);
-                  setEditName(b.name);
-                }}
-                className="rounded px-1.5 py-0.5 text-xs opacity-0 transition group-hover:opacity-100"
-              >
-                ✎
-              </button>
-              <button
-                type="button"
-                aria-label={`Delete ${b.name}`}
-                onClick={() => {
-                  if (boards.length > 1) onDelete(b.id);
-                }}
-                disabled={boards.length <= 1}
-                className="rounded px-1.5 py-0.5 text-xs opacity-0 transition group-hover:opacity-100 disabled:cursor-not-allowed"
-              >
-                🗑
-              </button>
+              {isOwned(b) ? (
+                <>
+                  <button
+                    type="button"
+                    aria-label={`Share ${b.name}`}
+                    onClick={() => onShare(b.id)}
+                    className="rounded px-1.5 py-0.5 text-xs opacity-0 transition group-hover:opacity-100"
+                  >
+                    🔗
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Rename ${b.name}`}
+                    onClick={() => {
+                      setEditingId(b.id);
+                      setEditName(b.name);
+                    }}
+                    className="rounded px-1.5 py-0.5 text-xs opacity-0 transition group-hover:opacity-100"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Delete ${b.name}`}
+                    onClick={() => {
+                      if (ownedCount > 1) onDelete(b.id);
+                    }}
+                    disabled={ownedCount <= 1}
+                    className="rounded px-1.5 py-0.5 text-xs opacity-0 transition group-hover:opacity-100 disabled:cursor-not-allowed"
+                  >
+                    🗑
+                  </button>
+                </>
+              ) : null}
             </div>
           );
         })}

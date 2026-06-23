@@ -23,6 +23,10 @@ class BoardRename(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
 
 
+class MemberAdd(BaseModel):
+    username: str = Field(..., min_length=1, max_length=50)
+
+
 class KanbanColumn(BaseModel):
     id: str
     title: str

@@ -17,11 +17,12 @@ uvicorn backend.main:app --reload   # dev server on :8000
 ### Backend tests (run from `backend/`)
 
 ```bash
-pytest                   # all 21 backend tests
+pytest                   # all 25 backend tests
 pytest test_main.py      # auth + AI proxy tests
 pytest test_board.py     # card CRUD + metadata tests
 pytest test_users.py     # registration / password hashing / data isolation
 pytest test_boards.py    # multi-board CRUD + ownership
+pytest test_sharing.py   # board collaboration + access control
 pytest -k test_name      # single test by name
 ```
 
@@ -31,9 +32,9 @@ pytest -k test_name      # single test by name
 npm run dev              # Next.js dev server (http://localhost:3000)
 npm run build            # static export → frontend/out/
 npm run lint             # ESLint
-npm run test:unit        # Vitest unit tests (32 tests, one-shot)
+npm run test:unit        # Vitest unit tests (38 tests, one-shot)
 npm run test:unit:watch  # Vitest watch mode
-npm run test:e2e         # Playwright e2e (10 tests — builds frontend, starts backend on :8000)
+npm run test:e2e         # Playwright e2e (11 tests — builds frontend, starts backend on :8000)
 npm run test:all         # unit + e2e
 ```
 
@@ -83,7 +84,7 @@ The SQLite database (`backend/pm.db`) is created automatically on first run.
 | `backend/models.py` | All Pydantic request/response models |
 | `backend/db.py` | SQLite init + legacy migration, thread-local connections, user/board/session read/write, `DEFAULT_BOARD` |
 | `backend/auth.py` | `/api/register`, `/api/login`, `/api/logout`, `/api/auth-status`; `get_current_user` / `require_user` dependencies |
-| `backend/board.py` | `/api/boards` CRUD; `/api/board` (GET/PUT) and `/api/cards` (POST/PATCH/DELETE) scoped to a board with ownership checks |
+| `backend/board.py` | `/api/boards` CRUD + `/api/boards/{id}/members` sharing; `/api/board` (GET/PUT) and `/api/cards` (POST/PATCH/DELETE) scoped to a board. Access = owner or member; rename/delete/share are owner-only |
 | `backend/ai.py` | `/api/ai` OpenRouter proxy, message builder, JSON extractor, board merge logic |
 
 **Import note:** `main.py` runs `sys.path.insert(0, os.path.dirname(__file__))` before any local imports so sibling modules resolve correctly from both the project root (`uvicorn backend.main:app`) and the `backend/` directory (`pytest`).

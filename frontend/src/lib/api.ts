@@ -6,6 +6,14 @@ export type BoardSummary = {
   position: number;
   created_at: string;
   updated_at: string;
+  role?: "owner" | "editor";
+  owner?: string | null;
+};
+
+export type BoardMember = {
+  user_id: number;
+  username: string;
+  role: string;
 };
 
 async function asJson<T>(res: Response): Promise<T> {
@@ -92,6 +100,28 @@ export async function renameBoard(boardId: number, name: string) {
 export async function deleteBoard(boardId: number) {
   return asJson<{ status: string }>(
     await fetch(`/api/boards/${boardId}`, { method: "DELETE" })
+  );
+}
+
+export async function listMembers(boardId: number) {
+  return asJson<{ members: BoardMember[] }>(
+    await fetch(`/api/boards/${boardId}/members`)
+  );
+}
+
+export async function addMember(boardId: number, username: string) {
+  return asJson<{ status: string; members: BoardMember[] }>(
+    await fetch(`/api/boards/${boardId}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    })
+  );
+}
+
+export async function removeMember(boardId: number, memberId: number) {
+  return asJson<{ status: string; members: BoardMember[] }>(
+    await fetch(`/api/boards/${boardId}/members/${memberId}`, { method: "DELETE" })
   );
 }
 
