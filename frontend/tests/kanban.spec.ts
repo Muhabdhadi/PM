@@ -103,6 +103,26 @@ test("adds a comment to a card", async ({ page }) => {
   await expect(page.getByTestId("card-card-1").getByText(/💬\s*1/)).toBeVisible();
 });
 
+test("shows board activity after adding a card", async ({ page }) => {
+  await page.goto("/");
+  const firstColumn = page.locator('[data-testid^="column-"]').first();
+  await firstColumn.getByRole("button", { name: /add a card/i }).click();
+  await firstColumn.getByPlaceholder("Card title").fill("Activity card");
+  // Wait for the create to persist server-side (UI add is optimistic).
+  await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes("/api/cards") && r.request().method() === "POST"
+    ),
+    firstColumn.getByRole("button", { name: /add card/i }).click(),
+  ]);
+  await expect(firstColumn.getByText("Activity card")).toBeVisible();
+
+  await page.getByRole("button", { name: /^activity$/i }).click();
+  const dialog = page.getByRole("dialog", { name: /board activity/i });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/added card .*Activity card/).first()).toBeVisible();
+});
+
 test("adds and removes a column", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-testid^="column-"]')).toHaveCount(5);

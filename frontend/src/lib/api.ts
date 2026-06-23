@@ -16,6 +16,12 @@ export type BoardMember = {
   role: string;
 };
 
+export type ActivityEntry = {
+  actor: string;
+  action: string;
+  created_at: string;
+};
+
 async function asJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
@@ -122,6 +128,12 @@ export async function addMember(boardId: number, username: string) {
 export async function removeMember(boardId: number, memberId: number) {
   return asJson<{ status: string; members: BoardMember[] }>(
     await fetch(`/api/boards/${boardId}/members/${memberId}`, { method: "DELETE" })
+  );
+}
+
+export async function listActivity(boardId: number) {
+  return asJson<{ activity: ActivityEntry[] }>(
+    await fetch(`/api/boards/${boardId}/activity`)
   );
 }
 

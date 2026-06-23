@@ -93,6 +93,18 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
   - Docs (README + CLAUDE) updated. 25 backend + 38 frontend unit + 11 e2e green.
 - Next: activity log; further a11y/UX polish.
 
+### Iteration 6
+- Activity log:
+  - DB: `board_activity` table; `record_activity` + `list_activity`.
+  - Recorded on card add/delete, comment add, member add/remove (actor +
+    server timestamp). `GET /api/boards/{id}/activity` (members only).
+  - Frontend: `ActivityDialog` (read-only feed, ESC close); Activity button in
+    the board summary row; `api.listActivity`.
+  - Tests: test_activity.py (3 — events, sharing, access); ActivityDialog unit
+    tests (2); e2e (add card → see activity, waiting on the create response to
+    avoid the optimistic-write race). 32 backend + 42 frontend unit + 13 e2e green.
+- Next: further a11y/UX polish (focus management, empty states, dark mode?).
+
 ### Iteration 5
 - Card comments (collaboration):
   - Backend: `comments` on KanbanCard; `POST /api/cards/{id}/comments` appends

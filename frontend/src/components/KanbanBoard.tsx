@@ -16,6 +16,7 @@ import {
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
 import { CardEditor, type CardPatch } from "@/components/CardEditor";
+import { ActivityDialog } from "@/components/ActivityDialog";
 import type { NewCardInput } from "@/components/NewCardForm";
 import ChatSidebar from "@/components/ChatSidebar";
 import * as api from "@/lib/api";
@@ -46,6 +47,7 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
   const [filter, setFilter] = useState<CardFilter>(emptyFilter);
   const [addingColumn, setAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState("");
+  const [showActivity, setShowActivity] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -309,6 +311,15 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
               {stats.overdue} overdue
             </span>
           )}
+          {boardId != null && (
+            <button
+              type="button"
+              onClick={() => setShowActivity(true)}
+              className="rounded-full bg-[var(--surface)] px-3 py-1.5 transition hover:text-[var(--navy-dark)]"
+            >
+              Activity
+            </button>
+          )}
         </div>
         <FilterBar filter={filter} labels={labels} onChange={setFilter} />
       </div>
@@ -387,6 +398,10 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
           }}
           onClose={() => setEditingCardId(null)}
         />
+      ) : null}
+
+      {showActivity && boardId != null ? (
+        <ActivityDialog boardId={boardId} onClose={() => setShowActivity(false)} />
       ) : null}
     </DndContext>
   );

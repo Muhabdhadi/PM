@@ -109,8 +109,17 @@ def init_db(db_path: str | None = None):
                 FOREIGN KEY (board_id) REFERENCES boards(id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS board_activity (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                board_id INTEGER NOT NULL,
+                actor TEXT NOT NULL,
+                action TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (board_id) REFERENCES boards(id) ON DELETE CASCADE
+            );
             CREATE INDEX IF NOT EXISTS idx_boards_owner ON boards(owner_id);
             CREATE INDEX IF NOT EXISTS idx_members_user ON board_members(user_id);
+            CREATE INDEX IF NOT EXISTS idx_activity_board ON board_activity(board_id);
             """
         )
         conn.commit()
@@ -344,6 +353,25 @@ def remove_board_member(board_id: int, user_id: int, db_path: str | None = None)
             "DELETE FROM board_members WHERE board_id=? AND user_id=?", (board_id, user_id)
         )
         conn.commit()
+
+
+def record_activity(board_id: int, actor: str, action: str, db_path: str | None = None):
+    with _conn(db_path) as conn:
+        conn.execute(
+            "INSERT INTO board_activity (board_id, actor, action, created_at) VALUES (?, ?, ?, ?)",
+            (board_id, actor, action, _now()),
+        )
+        conn.commit()
+
+
+def list_activity(board_id: int, limit: int = 30, db_path: str | None = None) -> list[dict]:
+    with _conn(db_path) as conn:
+        rows = conn.execute(
+            "SELECT actor, action, created_at FROM board_activity "
+            "WHERE board_id=? ORDER BY id DESC LIMIT ?",
+            (board_id, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def list_board_members(board_id: int, db_path: str | None = None) -> list[dict]:

@@ -86,14 +86,25 @@ def add_member(board_id: int, payload: MemberAdd, user=Depends(require_user)):
     if target["id"] == board["owner_id"]:
         raise HTTPException(status_code=409, detail="User already owns this board")
     db.add_board_member(board_id, target["id"])
+    db.record_activity(board_id, user["username"], f"shared the board with {payload.username}")
     return {"status": "ok", "members": db.list_board_members(board_id)}
 
 
 @router.delete("/api/boards/{board_id}/members/{member_id}")
 def remove_member(board_id: int, member_id: int, user=Depends(require_user)):
     _require_owned_board(user, board_id)
+    removed = db.get_user_by_id(member_id)
     db.remove_board_member(board_id, member_id)
+    if removed:
+        db.record_activity(board_id, user["username"], f"removed {removed['username']}")
     return {"status": "ok", "members": db.list_board_members(board_id)}
+
+
+@router.get("/api/boards/{board_id}/activity")
+def board_activity(board_id: int, user=Depends(require_user)):
+    if not db.user_can_access_board(board_id, user["id"]):
+        raise HTTPException(status_code=404, detail="Board not found")
+    return {"activity": db.list_activity(board_id)}
 
 
 # --- Single board kanban -------------------------------------------------
@@ -131,6 +142,7 @@ def create_card(card: CardCreate, board_id: int | None = None, user=Depends(requ
     board["cards"][card_id] = card_obj
     col["cardIds"].append(card_id)
     db.update_board_kanban(resolved, board)
+    db.record_activity(resolved, user["username"], f"added card “{card.title}”")
     return {"status": "ok", "card": card_obj}
 
 
@@ -200,6 +212,9 @@ def add_comment(
     existing.append(comment)
     cards[card_id]["comments"] = existing
     db.update_board_kanban(resolved, board)
+    db.record_activity(
+        resolved, user["username"], f"commented on “{cards[card_id].get('title', 'a card')}”"
+    )
     return {"status": "ok", "comment": comment, "comments": existing}
 
 
@@ -210,9 +225,11 @@ def delete_card(card_id: str, board_id: int | None = None, user=Depends(require_
     cards = board.get("cards", {})
     if card_id not in cards:
         raise HTTPException(status_code=404, detail="Card not found")
+    removed_title = cards[card_id].get("title", "a card")
     for c in board["columns"]:
         if card_id in c["cardIds"]:
             c["cardIds"].remove(card_id)
     cards.pop(card_id, None)
     db.update_board_kanban(resolved, board)
+    db.record_activity(resolved, user["username"], f"deleted card “{removed_title}”")
     return {"status": "ok"}
