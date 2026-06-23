@@ -1,11 +1,20 @@
 import secrets
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
 import db
 from db import DEFAULT_BOARD  # re-exported for tests/back-compat
 from auth import require_user
-from models import BoardCreate, BoardRename, CardCreate, CardUpdate, KanbanUpdate, MemberAdd
+from models import (
+    BoardCreate,
+    BoardRename,
+    CardCreate,
+    CardUpdate,
+    CommentCreate,
+    KanbanUpdate,
+    MemberAdd,
+)
 
 router = APIRouter()
 
@@ -165,6 +174,33 @@ def update_card(
             new_col["cardIds"].insert(payload.position, card_id)
     db.update_board_kanban(resolved, board)
     return {"status": "ok", "card": card}
+
+
+@router.post("/api/cards/{card_id}/comments", status_code=201)
+def add_comment(
+    card_id: str,
+    payload: CommentCreate,
+    board_id: int | None = None,
+    user=Depends(require_user),
+):
+    resolved = _resolve_board_id(user, board_id)
+    board = db.get_board_kanban(resolved) or {"columns": [], "cards": {}}
+    cards = board.get("cards", {})
+    if card_id not in cards:
+        raise HTTPException(status_code=404, detail="Card not found")
+    comment = {
+        "id": f"cmt-{secrets.token_hex(4)}",
+        "author": user["username"],
+        "text": payload.text,
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+    existing = cards[card_id].get("comments")
+    if not isinstance(existing, list):
+        existing = []
+    existing.append(comment)
+    cards[card_id]["comments"] = existing
+    db.update_board_kanban(resolved, board)
+    return {"status": "ok", "comment": comment, "comments": existing}
 
 
 @router.delete("/api/cards/{card_id}")

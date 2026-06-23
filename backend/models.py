@@ -27,6 +27,10 @@ class MemberAdd(BaseModel):
     username: str = Field(..., min_length=1, max_length=50)
 
 
+class CommentCreate(BaseModel):
+    text: str = Field(..., min_length=1, max_length=2000)
+
+
 class KanbanColumn(BaseModel):
     id: str
     title: str
@@ -41,6 +45,7 @@ class KanbanCard(BaseModel):
     dueDate: str | None = None
     labels: list[str] | None = None
     assignee: str | None = None
+    comments: list[dict] | None = None
 
 
 class KanbanUpdate(BaseModel):

@@ -88,6 +88,21 @@ test("edits a card to add a priority", async ({ page }) => {
   await expect(card.getByText("dana")).toBeVisible();
 });
 
+test("adds a comment to a card", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Edit Seed card" }).click();
+  const dialog = page.getByRole("dialog", { name: /edit card/i });
+  await expect(dialog.getByText(/no comments yet/i)).toBeVisible();
+
+  await dialog.getByLabel("Add a comment").fill("Reviewed and approved");
+  await dialog.getByRole("button", { name: /^comment$/i }).click();
+
+  await expect(dialog.getByText("Reviewed and approved")).toBeVisible();
+  // The comment count badge appears on the card after closing the editor.
+  await dialog.getByRole("button", { name: /^cancel$/i }).click();
+  await expect(page.getByTestId("card-card-1").getByText(/💬\s*1/)).toBeVisible();
+});
+
 test("adds and removes a column", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-testid^="column-"]')).toHaveCount(5);

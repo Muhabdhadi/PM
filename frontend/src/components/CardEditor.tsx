@@ -17,15 +17,18 @@ type CardEditorProps = {
   onSave: (patch: CardPatch) => void;
   onDelete: () => void;
   onClose: () => void;
+  onAddComment?: (text: string) => void | Promise<void>;
 };
 
-export const CardEditor = ({ card, onSave, onDelete, onClose }: CardEditorProps) => {
+export const CardEditor = ({ card, onSave, onDelete, onClose, onAddComment }: CardEditorProps) => {
   const [title, setTitle] = useState(card.title);
   const [details, setDetails] = useState(card.details);
   const [priority, setPriority] = useState<Priority | "">(card.priority ?? "");
   const [dueDate, setDueDate] = useState(card.dueDate ?? "");
   const [labels, setLabels] = useState((card.labels ?? []).join(", "));
   const [assignee, setAssignee] = useState(card.assignee ?? "");
+  const [commentText, setCommentText] = useState("");
+  const [commentBusy, setCommentBusy] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -51,6 +54,21 @@ export const CardEditor = ({ card, onSave, onDelete, onClose }: CardEditorProps)
     });
     onClose();
   };
+
+  const submitComment = async (event: { preventDefault: () => void }) => {
+    event.preventDefault();
+    const text = commentText.trim();
+    if (!text || !onAddComment) return;
+    setCommentBusy(true);
+    try {
+      await onAddComment(text);
+      setCommentText("");
+    } finally {
+      setCommentBusy(false);
+    }
+  };
+
+  const comments = card.comments ?? [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -142,6 +160,53 @@ export const CardEditor = ({ card, onSave, onDelete, onClose }: CardEditorProps)
               className="mt-1 w-full rounded-xl border border-[var(--stroke)] px-3 py-2 text-sm outline-none focus:border-[var(--primary-blue)]"
             />
           </label>
+
+          {onAddComment ? (
+            <div className="border-t border-[var(--stroke)] pt-4">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[var(--gray-text)]">
+                Comments
+              </span>
+              <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto">
+                {comments.length === 0 ? (
+                  <li className="text-sm text-[var(--gray-text)]">No comments yet.</li>
+                ) : (
+                  comments.map((c) => (
+                    <li key={c.id} className="rounded-xl bg-[var(--surface)] px-3 py-2">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-xs font-semibold text-[var(--navy-dark)]">
+                          {c.author}
+                        </span>
+                        <span className="text-[10px] text-[var(--gray-text)]">
+                          {new Date(c.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-[var(--navy-dark)]">{c.text}</p>
+                    </li>
+                  ))
+                )}
+              </ul>
+              <div className="mt-2 flex gap-2">
+                <input
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") submitComment(e);
+                  }}
+                  placeholder="Add a comment…"
+                  aria-label="Add a comment"
+                  className="flex-1 rounded-xl border border-[var(--stroke)] px-3 py-2 text-sm outline-none focus:border-[var(--primary-blue)]"
+                />
+                <button
+                  type="button"
+                  onClick={submitComment}
+                  disabled={commentBusy}
+                  className="rounded-xl bg-[var(--secondary-purple)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                >
+                  Comment
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="flex items-center justify-between pt-2">
             <button

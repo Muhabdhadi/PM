@@ -1,5 +1,12 @@
 export type Priority = "low" | "medium" | "high";
 
+export type Comment = {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: string;
+};
+
 export type Card = {
   id: string;
   title: string;
@@ -8,6 +15,7 @@ export type Card = {
   dueDate?: string;
   labels?: string[];
   assignee?: string;
+  comments?: Comment[];
 };
 
 export const PRIORITIES: Priority[] = ["low", "medium", "high"];

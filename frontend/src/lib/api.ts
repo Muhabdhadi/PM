@@ -182,3 +182,13 @@ export async function updateCard(
 export async function deleteCard(cardId: string, boardId?: number) {
   return fetch(`/api/cards/${cardId}${boardQs(boardId)}`, { method: "DELETE" });
 }
+
+export async function addComment(cardId: string, text: string, boardId?: number) {
+  return asJson<{ status: string; comment: import("@/lib/kanban").Comment }>(
+    await fetch(`/api/cards/${cardId}/comments${boardQs(boardId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    })
+  );
+}

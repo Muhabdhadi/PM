@@ -107,3 +107,50 @@ def test_card_rejects_invalid_priority(client):
         json={"title": "Bad", "columnId": "col-backlog", "priority": "urgent"},
     )
     assert resp.status_code == 422
+
+
+def test_add_comment_to_card(client):
+    login(client)
+    client.put("/api/board", json=FRESH_BOARD)
+    client.post(
+        "/api/cards",
+        json={"id": "card-c", "title": "Discuss", "details": "", "columnId": "col-backlog"},
+    )
+
+    resp = client.post("/api/cards/card-c/comments", json={"text": "First!"})
+    assert resp.status_code == 201
+    comment = resp.json()["comment"]
+    assert comment["text"] == "First!"
+    assert comment["author"] == "user"
+    assert comment["id"].startswith("cmt-")
+    assert comment["createdAt"]
+
+    # a second comment accumulates and the card persists them
+    client.post("/api/cards/card-c/comments", json={"text": "Second"})
+    board = client.get("/api/board").json()["board"]
+    comments = board["cards"]["card-c"]["comments"]
+    assert [c["text"] for c in comments] == ["First!", "Second"]
+
+
+def test_add_comment_when_card_has_null_comments(client):
+    """A board saved via PUT serializes card.comments as null; commenting must still work."""
+    login(client)
+    board = {
+        "columns": [{"id": "col-backlog", "title": "Backlog", "cardIds": ["card-n"]}],
+        "cards": {"card-n": {"id": "card-n", "title": "T", "details": "", "comments": None}},
+    }
+    assert client.put("/api/board", json=board).status_code == 200
+    resp = client.post("/api/cards/card-n/comments", json={"text": "works"})
+    assert resp.status_code == 201
+    assert resp.json()["comments"][0]["text"] == "works"
+
+
+def test_add_comment_validates_and_404s(client):
+    login(client)
+    client.put("/api/board", json=FRESH_BOARD)
+    assert client.post("/api/cards/missing/comments", json={"text": "hi"}).status_code == 404
+    client.post(
+        "/api/cards",
+        json={"id": "card-d", "title": "X", "details": "", "columnId": "col-backlog"},
+    )
+    assert client.post("/api/cards/card-d/comments", json={"text": ""}).status_code == 422

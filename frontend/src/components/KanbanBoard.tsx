@@ -221,6 +221,23 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
       });
   };
 
+  const handleAddComment = async (cardId: string, text: string) => {
+    try {
+      const { comment } = await api.addComment(cardId, text, boardId);
+      setBoard((prev) => {
+        const existing = prev.cards[cardId];
+        if (!existing) return prev;
+        const next = {
+          ...existing,
+          comments: [...(existing.comments ?? []), comment],
+        };
+        return { ...prev, cards: { ...prev.cards, [cardId]: next } };
+      });
+    } catch (err) {
+      console.error("Failed to add comment:", err);
+    }
+  };
+
   const handleAddColumn = (title: string) => {
     const trimmed = title.trim();
     if (!trimmed) return;
@@ -360,6 +377,7 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
         <CardEditor
           card={editingCard}
           onSave={(patch) => handleUpdateCard(editingCard.id, patch)}
+          onAddComment={(text) => handleAddComment(editingCard.id, text)}
           onDelete={() => {
             const columnId = board.columns.find((c) =>
               c.cardIds.includes(editingCard.id)

@@ -65,4 +65,31 @@ describe("CardEditor", () => {
     await userEvent.click(screen.getByRole("button", { name: /delete/i }));
     expect(onDelete).toHaveBeenCalled();
   });
+
+  it("renders existing comments and adds a new one", async () => {
+    const onAddComment = vi.fn();
+    const withComments = {
+      ...card,
+      comments: [{ id: "cmt-1", author: "user", text: "Looks good", createdAt: "2026-01-01T00:00:00Z" }],
+    };
+    render(
+      <CardEditor
+        card={withComments}
+        onSave={vi.fn()}
+        onDelete={vi.fn()}
+        onClose={vi.fn()}
+        onAddComment={onAddComment}
+      />
+    );
+    expect(screen.getByText("Looks good")).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText(/add a comment/i), "On it");
+    await userEvent.click(screen.getByRole("button", { name: /^comment$/i }));
+    expect(onAddComment).toHaveBeenCalledWith("On it");
+  });
+
+  it("hides the comments section without an onAddComment handler", () => {
+    render(<CardEditor card={card} onSave={vi.fn()} onDelete={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.queryByLabelText(/add a comment/i)).not.toBeInTheDocument();
+  });
 });

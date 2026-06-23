@@ -92,3 +92,16 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
     BoardSidebar shared-behavior (2) unit tests; collaboration e2e (invite+revoke).
   - Docs (README + CLAUDE) updated. 25 backend + 38 frontend unit + 11 e2e green.
 - Next: activity log; further a11y/UX polish.
+
+### Iteration 5
+- Card comments (collaboration):
+  - Backend: `comments` on KanbanCard; `POST /api/cards/{id}/comments` appends
+    `{id, author, text, createdAt}` (author/time server-set), accessible to any
+    board member. Fixed a null-`comments` crash (PUT serializes it to null) and
+    added a regression test for that path.
+  - Frontend: comment thread + input in CardEditor (`onAddComment`), comment-count
+    badge on cards, `api.addComment`, optimistic board update.
+  - Tests: backend comment append/author/access/null-path (4) + member-comment
+    sharing test; CardEditor comment unit tests (2); e2e add-comment.
+  - Docs updated. 29 backend + 40 frontend unit + 12 e2e green.
+- Next: activity log; further a11y/UX polish.

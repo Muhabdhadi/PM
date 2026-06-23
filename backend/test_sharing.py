@@ -97,3 +97,19 @@ def test_share_with_unknown_user_returns_404(client):
     board_id = owner_board(owner)
     resp = owner.post(f"/api/boards/{board_id}/members", json={"username": "ghost"})
     assert resp.status_code == 404
+
+
+def test_member_can_comment_with_their_own_identity(client):
+    owner = make_client()
+    board_id = owner_board(owner)
+    owner.post("/api/cards", json={"id": "card-x", "title": "T", "details": "", "columnId": "col-backlog"})
+
+    member = make_client()
+    register(member, "collab4")
+    member.post("/api/logout")
+    owner.post(f"/api/boards/{board_id}/members", json={"username": "collab4"})
+
+    member.post("/api/login", json={"username": "collab4", "password": "password1"})
+    resp = member.post(f"/api/cards/card-x/comments?board_id={board_id}", json={"text": "On it"})
+    assert resp.status_code == 201
+    assert resp.json()["comment"]["author"] == "collab4"

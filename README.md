@@ -8,6 +8,7 @@ A multi-user Kanban project management web app with a Next.js frontend and a Fas
 - **Per-user data isolation** — each user only sees their own boards and cards.
 - **Multiple boards per user** — create, rename, switch, and delete boards from the workspace sidebar.
 - **Board collaboration** — owners can share a board with other users by username; collaborators (editors) can view and edit but cannot rename, delete, or re-share. Access is enforced server-side.
+- **Card comments** — board members can discuss a card via a comment thread (author + timestamp set server-side); a count badge shows on the card.
 - **Customizable columns** — add and remove columns per board (defaults: Backlog → Discovery → In Progress → Review → Done).
 - **Rich cards** — title, description, priority (low/medium/high), due date (with overdue highlighting), labels, and an assignee. Cards are created, edited (modal), moved via drag-and-drop, and deleted.
 - **Search & filter** — filter visible cards by text, priority, and label; a board summary shows total / done / overdue counts.
@@ -69,19 +70,19 @@ npm run dev        # http://localhost:3000
 
 ## Run tests
 
-**Backend tests** (25 tests):
+**Backend tests** (29 tests):
 ```powershell
 cd backend
 py -m pytest -v
 ```
 
-**Frontend unit tests** (38 tests):
+**Frontend unit tests** (40 tests):
 ```powershell
 cd frontend
 npm run test:unit
 ```
 
-**End-to-end tests** (11 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
+**End-to-end tests** (12 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
 ```powershell
 cd frontend
 npx playwright test
@@ -122,6 +123,7 @@ The Docker build compiles the frontend, copies the static output to `backend/sta
 | `POST` | `/api/cards?board_id=` | Create a card |
 | `PATCH` | `/api/cards/{id}?board_id=` | Update / move a card |
 | `DELETE` | `/api/cards/{id}?board_id=` | Delete a card |
+| `POST` | `/api/cards/{id}/comments?board_id=` | Add a comment (author/timestamp set server-side) |
 | `POST` | `/api/ai` | Proxy prompt to OpenRouter; merges board updates |
 
 Board/card endpoints enforce ownership — accessing another user's board returns `404`.
