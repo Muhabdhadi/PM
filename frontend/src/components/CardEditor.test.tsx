@@ -26,6 +26,7 @@ describe("CardEditor", () => {
     await userEvent.selectOptions(screen.getByLabelText(/priority/i), "high");
     await userEvent.clear(screen.getByDisplayValue("a"));
     await userEvent.type(screen.getByLabelText(/labels/i), "x, y");
+    await userEvent.type(screen.getByLabelText(/assignee/i), "dana");
 
     await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
 
@@ -34,6 +35,16 @@ describe("CardEditor", () => {
     expect(patch.title).toBe("New title");
     expect(patch.priority).toBe("high");
     expect(patch.labels).toEqual(["x", "y"]);
+    expect(patch.assignee).toBe("dana");
+  });
+
+  it("closes on Escape", async () => {
+    const onClose = vi.fn();
+    render(
+      <CardEditor card={card} onSave={vi.fn()} onDelete={vi.fn()} onClose={onClose} />
+    );
+    await userEvent.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalled();
   });
 
   it("clears priority when set to none", async () => {

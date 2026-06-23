@@ -69,3 +69,12 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
   so arbitrary column counts work on every breakpoint. e2e add/remove column.
   21 backend + 31 frontend unit + 10 e2e all green.
 - Next: Phase 4 UI/accessibility polish; then activity log + docs refresh.
+
+### Iteration 3
+- Assignee field on cards (backend model + create/update; CardEditor field; card
+  avatar chip; optimistic update). Mirrors the priority/labels pattern.
+- Accessibility: CardEditor closes on Escape (unit + covered in flows).
+- Docs refresh: README.md and CLAUDE.md rewritten to reflect multi-user,
+  multi-board architecture, new endpoints, modules, components, and test counts.
+- 21 backend + 32 frontend unit + 10 e2e all green.
+- Next: board collaboration/sharing (own iteration), activity log, further a11y.

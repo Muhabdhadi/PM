@@ -138,6 +138,7 @@ export async function updateCard(
     priority?: string | null;
     dueDate?: string | null;
     labels?: string[];
+    assignee?: string | null;
   },
   boardId?: number
 ) {

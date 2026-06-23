@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Single-board Kanban project management MVP. FastAPI backend serves the static Next.js frontend export from one Docker container. Login credentials default to `user` / `password` but are overridable via `APP_USERNAME` / `APP_PASSWORD` env vars.
+Multi-user Kanban project management app. FastAPI backend serves the static Next.js frontend export from one Docker container. Users self-register (`/api/register`) or log in; a default `user` / `password` account is seeded (overridable via `APP_USERNAME` / `APP_PASSWORD`). Each user owns multiple boards; each board has customizable columns and rich cards (priority, due date, labels, assignee), plus search/filter and an AI assistant scoped to the active board.
 
 ## Commands
 
@@ -17,9 +17,11 @@ uvicorn backend.main:app --reload   # dev server on :8000
 ### Backend tests (run from `backend/`)
 
 ```bash
-pytest                   # all 8 backend tests
+pytest                   # all 21 backend tests
 pytest test_main.py      # auth + AI proxy tests
-pytest test_board.py     # card CRUD tests
+pytest test_board.py     # card CRUD + metadata tests
+pytest test_users.py     # registration / password hashing / data isolation
+pytest test_boards.py    # multi-board CRUD + ownership
 pytest -k test_name      # single test by name
 ```
 
@@ -29,9 +31,9 @@ pytest -k test_name      # single test by name
 npm run dev              # Next.js dev server (http://localhost:3000)
 npm run build            # static export → frontend/out/
 npm run lint             # ESLint
-npm run test:unit        # Vitest unit tests (7 tests, one-shot)
+npm run test:unit        # Vitest unit tests (32 tests, one-shot)
 npm run test:unit:watch  # Vitest watch mode
-npm run test:e2e         # Playwright e2e (3 tests — builds frontend, starts backend on :8000)
+npm run test:e2e         # Playwright e2e (10 tests — builds frontend, starts backend on :8000)
 npm run test:all         # unit + e2e
 ```
 
@@ -61,13 +63,13 @@ The SQLite database (`backend/pm.db`) is created automatically on first run.
 
 **Request flow:** Browser → FastAPI (`:8000`) → serves static Next.js SPA from `backend/static/` → SPA calls `/api/*` endpoints → SQLite (`pm.db`)
 
-**Auth:** Cookie-based sessions stored in SQLite `sessions` table with 24-hour TTL. `AuthGate.tsx` checks `/api/auth-status` on mount; unauthenticated users are redirected to `/login`. Login is rate-limited to 10 req/min per IP via `slowapi`.
+**Auth:** Users live in a `users` table with PBKDF2-hashed passwords (`security.py`). Cookie-based sessions are stored in SQLite `sessions` keyed by `user_id`, with a 24-hour TTL. `AuthGate.tsx` checks `/api/auth-status` on mount and renders `Workspace`; unauthenticated users are redirected to `/login` (registration at `/register`). Register/login are rate-limited (5/min, 10/min per IP) via `slowapi`.
 
-**Board state:** The entire board is stored as a single JSON blob in SQLite (`kanban_json` column), keyed by `user_id`. `db.py` provides `get_board()` / `upsert_board()` using thread-local connections.
+**Data model:** `users` (1) → (N) `boards`. Each board row stores its Kanban layout as a single JSON blob in the `kanban_json` column (`owner_id`, `name`, `position`). `db.py` provides `list_boards`, `create_board`, `get_board_kanban`, `update_board_kanban`, `get_or_create_default_board`, etc., using thread-local connections, and migrates the legacy single-board schema on startup. `/api/board` and `/api/cards` accept an optional `board_id` query param (defaulting to the user's first board) and enforce ownership.
 
-**AI flow:** `ChatSidebar.tsx` → `POST /api/ai` → FastAPI proxies to OpenRouter (`openai/gpt-oss-120b:free`) → returns `{ response, kanbanUpdate }` → response validated against `StructuredAIResponse` Pydantic model → valid updates are merged onto (not replaced) the existing board and persisted.
+**AI flow:** `ChatSidebar.tsx` → `POST /api/ai` (`{ prompt, board, board_id }`) → FastAPI proxies to OpenRouter (`openai/gpt-oss-120b:free`) → returns `{ response, kanbanUpdate }` → validated against `StructuredAIResponse` → valid updates are merged onto (not replaced) the resolved board and persisted.
 
-**DnD:** Managed by `@dnd-kit` entirely on the frontend. `lib/kanban.ts` contains all board types (`BoardData`, `Card`, `Column`) and pure helper functions (`moveCard`, `findColumnId`, `getCardPosition`, `createId`).
+**DnD:** Managed by `@dnd-kit` entirely on the frontend. `lib/kanban.ts` contains all board types (`BoardData`, `Card`, `Column`, `Priority`, `CardFilter`) and pure helpers (`moveCard`, `findColumnId`, `getCardPosition`, `createId`, `cardMatchesFilter`, `collectLabels`, `getBoardStats`, `isOverdue`).
 
 ## Backend module layout
 
@@ -75,12 +77,13 @@ The SQLite database (`backend/pm.db`) is created automatically on first run.
 
 | File | Purpose |
 |---|---|
-| `backend/main.py` | Thin app factory — wires lifespan, middleware, routers, static serving (~45 lines) |
+| `backend/main.py` | Thin app factory — wires lifespan, middleware, routers, static serving (also maps extensionless deep links to `<route>.html`) |
 | `backend/config.py` | Env-var loading, constants, shared `slowapi` `Limiter` instance |
+| `backend/security.py` | PBKDF2-SHA256 `hash_password` / `verify_password` (stdlib only) |
 | `backend/models.py` | All Pydantic request/response models |
-| `backend/db.py` | SQLite init, thread-local connections, board + session read/write |
-| `backend/auth.py` | `/api/login`, `/api/logout`, `/api/auth-status`; `get_username_from_session` FastAPI dependency |
-| `backend/board.py` | `/api/board` (GET/PUT) and `/api/cards` (POST/PATCH/DELETE); `DEFAULT_BOARD` constant |
+| `backend/db.py` | SQLite init + legacy migration, thread-local connections, user/board/session read/write, `DEFAULT_BOARD` |
+| `backend/auth.py` | `/api/register`, `/api/login`, `/api/logout`, `/api/auth-status`; `get_current_user` / `require_user` dependencies |
+| `backend/board.py` | `/api/boards` CRUD; `/api/board` (GET/PUT) and `/api/cards` (POST/PATCH/DELETE) scoped to a board with ownership checks |
 | `backend/ai.py` | `/api/ai` OpenRouter proxy, message builder, JSON extractor, board merge logic |
 
 **Import note:** `main.py` runs `sys.path.insert(0, os.path.dirname(__file__))` before any local imports so sibling modules resolve correctly from both the project root (`uvicorn backend.main:app`) and the `backend/` directory (`pytest`).
@@ -91,12 +94,19 @@ The SQLite database (`backend/pm.db`) is created automatically on first run.
 
 | File | Purpose |
 |---|---|
-| `frontend/src/components/KanbanBoard.tsx` | Top-level board state, DnD context, API integration |
-| `frontend/src/components/ChatSidebar.tsx` | AI assistant panel; typed with `BoardData`; applies board updates from AI response |
-| `frontend/src/lib/kanban.ts` | Shared types and pure board-manipulation utilities |
+| `frontend/src/components/AuthGate.tsx` | Checks `/api/auth-status`, then renders `Workspace` |
+| `frontend/src/components/Workspace.tsx` | Shell: loads boards, active-board state, responsive sidebar + mobile drawer |
+| `frontend/src/components/BoardSidebar.tsx` | Board list — switch / create / rename / delete + sign out |
+| `frontend/src/components/KanbanBoard.tsx` | Board state, DnD context, filter/summary, column + card handlers |
+| `frontend/src/components/KanbanColumn.tsx` / `KanbanCard.tsx` | Column (rename/delete) and card (badges, edit/remove) UI |
+| `frontend/src/components/CardEditor.tsx` | Modal editor for title/description/priority/due date/labels/assignee |
+| `frontend/src/components/FilterBar.tsx` | Search + priority + label filtering |
+| `frontend/src/components/ChatSidebar.tsx` | Collapsible AI assistant panel, scoped to the active board |
+| `frontend/src/lib/api.ts` | Typed API client (auth, boards CRUD, board/card ops) |
+| `frontend/src/lib/kanban.ts` | Shared types and pure board-manipulation / filter / stats utilities |
 
 ## Testing Notes
 
-- **Backend:** `conftest.py` provides a `client` fixture with a `tmp_path`-scoped SQLite DB — each test gets a fully isolated database. Monkeypatching `requests.post` targets `ai.requests`, not `main.requests`.
-- **Frontend unit:** Vitest with jsdom; `@` aliased to `src/`.
-- **E2E:** Playwright `globalSetup` builds the frontend (`npm run build`), copies `frontend/out/` to `backend/static/`, then Playwright boots the real FastAPI backend on port 8000. Tests run against `http://127.0.0.1:8000`.
+- **Backend:** `conftest.py` provides a `client` fixture with a `tmp_path`-scoped SQLite DB (each test fully isolated, default user re-seeded) and disables the shared rate limiter so per-IP counters don't bleed across tests. Monkeypatching `requests.post` targets `ai.requests`, not `main.requests`.
+- **Frontend unit:** Vitest with jsdom; `@` aliased to `src/`. Pure helpers in `lib/kanban.ts` are unit-tested directly; components mock `@/lib/api` or `fetch`.
+- **E2E:** Playwright `globalSetup` builds the frontend (`npm run build`), copies `frontend/out/` to `backend/static/`, then Playwright boots the real FastAPI backend on port 8000. Tests run against `http://127.0.0.1:8000`. They share the seeded `user` account/default board, so the suite runs serially (`workers: 1`); `beforeEach` reseeds the default board via `PUT /api/board`.

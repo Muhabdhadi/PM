@@ -63,7 +63,10 @@ export const KanbanCard = ({ card, onDelete, onEdit }: KanbanCardProps) => {
         </div>
       </div>
 
-      {(card.priority || card.dueDate || (card.labels && card.labels.length > 0)) && (
+      {(card.priority ||
+        card.dueDate ||
+        card.assignee ||
+        (card.labels && card.labels.length > 0)) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {card.priority ? (
             <span
@@ -94,6 +97,17 @@ export const KanbanCard = ({ card, onDelete, onEdit }: KanbanCardProps) => {
               {label}
             </span>
           ))}
+          {card.assignee ? (
+            <span
+              className="ml-auto inline-flex items-center gap-1 rounded-full bg-[var(--secondary-purple)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--secondary-purple)]"
+              title={`Assigned to ${card.assignee}`}
+            >
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[var(--secondary-purple)] text-[8px] text-white">
+                {card.assignee.charAt(0).toUpperCase()}
+              </span>
+              {card.assignee}
+            </span>
+          ) : null}
         </div>
       )}
     </article>

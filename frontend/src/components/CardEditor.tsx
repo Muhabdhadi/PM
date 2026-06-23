@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { PRIORITIES, type Card, type Priority } from "@/lib/kanban";
 
 export type CardPatch = {
@@ -9,6 +9,7 @@ export type CardPatch = {
   priority?: Priority | null;
   dueDate?: string | null;
   labels?: string[];
+  assignee?: string | null;
 };
 
 type CardEditorProps = {
@@ -24,6 +25,15 @@ export const CardEditor = ({ card, onSave, onDelete, onClose }: CardEditorProps)
   const [priority, setPriority] = useState<Priority | "">(card.priority ?? "");
   const [dueDate, setDueDate] = useState(card.dueDate ?? "");
   const [labels, setLabels] = useState((card.labels ?? []).join(", "));
+  const [assignee, setAssignee] = useState(card.assignee ?? "");
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -37,6 +47,7 @@ export const CardEditor = ({ card, onSave, onDelete, onClose }: CardEditorProps)
         .split(",")
         .map((l) => l.trim())
         .filter(Boolean),
+      assignee: assignee.trim() ? assignee.trim() : null,
     });
     onClose();
   };
@@ -116,6 +127,18 @@ export const CardEditor = ({ card, onSave, onDelete, onClose }: CardEditorProps)
               value={labels}
               onChange={(e) => setLabels(e.target.value)}
               placeholder="design, urgent"
+              className="mt-1 w-full rounded-xl border border-[var(--stroke)] px-3 py-2 text-sm outline-none focus:border-[var(--primary-blue)]"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--gray-text)]">
+              Assignee
+            </span>
+            <input
+              value={assignee}
+              onChange={(e) => setAssignee(e.target.value)}
+              placeholder="Who owns this?"
               className="mt-1 w-full rounded-xl border border-[var(--stroke)] px-3 py-2 text-sm outline-none focus:border-[var(--primary-blue)]"
             />
           </label>

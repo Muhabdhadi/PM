@@ -36,6 +36,7 @@ class KanbanCard(BaseModel):
     priority: Priority | None = None
     dueDate: str | None = None
     labels: list[str] | None = None
+    assignee: str | None = None
 
 
 class KanbanUpdate(BaseModel):
@@ -51,6 +52,7 @@ class CardCreate(BaseModel):
     priority: Priority | None = None
     dueDate: str | None = Field(default=None, max_length=40)
     labels: list[str] | None = Field(default=None, max_length=20)
+    assignee: str | None = Field(default=None, max_length=80)
 
 
 class CardUpdate(BaseModel):
@@ -61,6 +63,7 @@ class CardUpdate(BaseModel):
     priority: Priority | None = None
     dueDate: str | None = Field(default=None, max_length=40)
     labels: list[str] | None = Field(default=None, max_length=20)
+    assignee: str | None = Field(default=None, max_length=80)
 
 
 class AIRequest(BaseModel):

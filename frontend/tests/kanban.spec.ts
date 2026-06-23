@@ -79,11 +79,13 @@ test("edits a card to add a priority", async ({ page }) => {
   await expect(dialog).toBeVisible();
   await dialog.getByLabel("Priority").selectOption("high");
   await dialog.getByLabel("Labels (comma separated)").fill("urgent");
+  await dialog.getByLabel("Assignee").fill("dana");
   await dialog.getByRole("button", { name: /^save$/i }).click();
 
   const card = page.getByTestId("card-card-1");
   await expect(card.getByText("high")).toBeVisible();
   await expect(card.getByText("urgent")).toBeVisible();
+  await expect(card.getByText("dana")).toBeVisible();
 });
 
 test("adds and removes a column", async ({ page }) => {

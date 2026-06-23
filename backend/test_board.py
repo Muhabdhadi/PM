@@ -71,6 +71,7 @@ def test_card_metadata_fields(client):
             "priority": "high",
             "dueDate": "2026-07-01",
             "labels": ["release", "urgent"],
+            "assignee": "alice",
         },
     )
     assert created.status_code == 200
@@ -78,16 +79,18 @@ def test_card_metadata_fields(client):
     assert card["priority"] == "high"
     assert card["dueDate"] == "2026-07-01"
     assert card["labels"] == ["release", "urgent"]
+    assert card["assignee"] == "alice"
 
-    # update clears priority and changes labels
+    # update clears priority and changes labels and assignee
     updated = client.patch(
         "/api/cards/card-meta",
-        json={"priority": None, "labels": ["release"]},
+        json={"priority": None, "labels": ["release"], "assignee": "bob"},
     )
     assert updated.status_code == 200
     card = updated.json()["card"]
     assert "priority" not in card
     assert card["labels"] == ["release"]
+    assert card["assignee"] == "bob"
 
     # the cleared/changed values survive a reload
     board = client.get("/api/board").json()["board"]

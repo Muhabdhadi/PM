@@ -7,6 +7,7 @@ export type Card = {
   priority?: Priority;
   dueDate?: string;
   labels?: string[];
+  assignee?: string;
 };
 
 export const PRIORITIES: Priority[] = ["low", "medium", "high"];

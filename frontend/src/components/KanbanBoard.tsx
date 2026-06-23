@@ -192,6 +192,10 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
         if (patch.labels.length) next.labels = patch.labels;
         else delete next.labels;
       }
+      if (patch.assignee !== undefined) {
+        if (patch.assignee) next.assignee = patch.assignee;
+        else delete next.assignee;
+      }
       return { ...prev, cards: { ...prev.cards, [cardId]: next } };
     });
 
@@ -204,6 +208,7 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
           priority: patch.priority,
           dueDate: patch.dueDate,
           labels: patch.labels,
+          assignee: patch.assignee,
         },
         boardId
       )

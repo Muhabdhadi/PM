@@ -78,7 +78,7 @@ def create_card(card: CardCreate, board_id: int | None = None, user=Depends(requ
     board = db.get_board_kanban(resolved) or {"columns": [], "cards": {}}
     card_id = card.id or f"card-{secrets.token_hex(4)}"
     card_obj = {"id": card_id, "title": card.title, "details": card.details}
-    for field in ("priority", "dueDate", "labels"):
+    for field in ("priority", "dueDate", "labels", "assignee"):
         value = getattr(card, field)
         if value is not None:
             card_obj[field] = value
@@ -111,7 +111,7 @@ def update_card(
         card["details"] = payload.details
     # Metadata fields: a provided value (incl. null/empty) is applied so the
     # editor can both set and clear them.
-    for field in ("priority", "dueDate", "labels"):
+    for field in ("priority", "dueDate", "labels", "assignee"):
         if field in provided:
             value = provided[field]
             if value in (None, "", []):

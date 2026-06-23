@@ -1,38 +1,44 @@
-# Project Management MVP
+# Project Management App
 
-A Kanban project management web app with a Next.js frontend and a FastAPI backend, built as part of a Udemy course on AI-assisted coding.
+A multi-user Kanban project management web app with a Next.js frontend and a FastAPI backend, built as part of a Udemy course on AI-assisted coding.
 
 ## Functionality
 
-- User sign-in with configurable credentials (default `user` / `password`, overridable via env vars).
-- Protected access — unauthenticated users are redirected to login.
-- Kanban board with five fixed columns (Backlog → Discovery → In Progress → Review → Done).
-- Cards can be created, renamed, moved between columns, and deleted.
-- Board state persisted in a local SQLite database (`backend/pm.db`).
-- AI assistant chat sidebar, powered by OpenRouter, that can read and update the board via structured outputs.
-- Session tokens stored in SQLite with a 24-hour expiry.
+- **User accounts** — self-service registration plus login, with PBKDF2-hashed passwords. A default `user` / `password` account is seeded (credentials configurable via env vars).
+- **Per-user data isolation** — each user only sees their own boards and cards.
+- **Multiple boards per user** — create, rename, switch, and delete boards from the workspace sidebar.
+- **Customizable columns** — add and remove columns per board (defaults: Backlog → Discovery → In Progress → Review → Done).
+- **Rich cards** — title, description, priority (low/medium/high), due date (with overdue highlighting), labels, and an assignee. Cards are created, edited (modal), moved via drag-and-drop, and deleted.
+- **Search & filter** — filter visible cards by text, priority, and label; a board summary shows total / done / overdue counts.
+- **AI assistant** — chat sidebar powered by OpenRouter that can read and update the active board via validated structured outputs.
+- **Responsive UI** — sidebar collapses to a drawer on mobile; the board scrolls horizontally with touch drag support.
+- Board state persisted in SQLite (`backend/pm.db`); session tokens stored with a 24-hour expiry.
 
 ## Architecture
 
 ```
 pm/
 ├── backend/
-│   ├── main.py        # App factory — wires middleware, routers, and static serving
+│   ├── main.py        # App factory — middleware, routers, SPA/static serving
 │   ├── config.py      # Env-var loading, constants, shared rate-limiter
+│   ├── security.py    # PBKDF2 password hashing (stdlib)
 │   ├── models.py      # Pydantic request/response models
-│   ├── db.py          # SQLite access (boards + sessions, thread-local connections)
-│   ├── auth.py        # /api/login, /api/logout, /api/auth-status, session dep
-│   ├── board.py       # /api/board (GET/PUT) and /api/cards (POST/PATCH/DELETE)
+│   ├── db.py          # SQLite access (users, boards-per-user, sessions) + migration
+│   ├── auth.py        # /api/register, /api/login, /api/logout, /api/auth-status
+│   ├── board.py       # /api/boards CRUD; /api/board + /api/cards scoped to a board
 │   ├── ai.py          # /api/ai OpenRouter proxy with structured-output validation
 │   ├── static/        # Built Next.js output (auto-populated by Docker / e2e setup)
 │   └── pm.db          # SQLite database (auto-created on first start)
 └── frontend/
     ├── src/
-    │   ├── app/           # Next.js app router pages (login, board)
-    │   ├── components/    # KanbanBoard, ChatSidebar, Card, Column UI components
-    │   └── lib/           # kanban.ts (types, helpers), api.ts (fetch wrappers)
+    │   ├── app/           # Next.js pages (login, register, board)
+    │   ├── components/    # Workspace, BoardSidebar, KanbanBoard, KanbanColumn,
+    │   │                  # KanbanCard, CardEditor, FilterBar, ChatSidebar, …
+    │   └── lib/           # kanban.ts (types/helpers), api.ts (typed API client)
     └── tests/             # Playwright e2e tests
 ```
+
+Data model: `users` (1) → (N) `boards`; each board stores its Kanban layout as a JSON blob. `sessions` reference `user_id`. A legacy single-board schema is migrated automatically on startup.
 
 ## Environment variables
 
@@ -41,8 +47,8 @@ Copy `.env.example` to `.env` (or set these in Docker / your shell):
 | Variable | Default | Description |
 |---|---|---|
 | `OPENROUTER_API_KEY` | — | Required for AI features |
-| `APP_USERNAME` | `user` | Login username |
-| `APP_PASSWORD` | `password` | Login password |
+| `APP_USERNAME` | `user` | Seeded default account username |
+| `APP_PASSWORD` | `password` | Seeded default account password |
 | `COOKIE_SECURE` | `false` | Set to `true` behind HTTPS |
 
 ## Run locally
@@ -62,19 +68,19 @@ npm run dev        # http://localhost:3000
 
 ## Run tests
 
-**Backend unit tests** (8 tests):
+**Backend tests** (21 tests):
 ```powershell
 cd backend
 py -m pytest -v
 ```
 
-**Frontend unit tests** (7 tests):
+**Frontend unit tests** (32 tests):
 ```powershell
 cd frontend
 npm run test:unit
 ```
 
-**End-to-end tests** (3 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000):
+**End-to-end tests** (10 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
 ```powershell
 cd frontend
 npx playwright test
@@ -99,12 +105,19 @@ The Docker build compiles the frontend, copies the static output to `backend/sta
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/health` | Health check |
+| `POST` | `/api/register` | Create an account + session (rate-limited: 5/min per IP) |
 | `POST` | `/api/login` | Authenticate (rate-limited: 10/min per IP) |
 | `POST` | `/api/logout` | Clear session |
 | `GET` | `/api/auth-status` | Check current session |
-| `GET` | `/api/board` | Fetch board for authenticated user |
-| `PUT` | `/api/board` | Replace board state (schema-validated) |
-| `POST` | `/api/cards` | Create a card |
-| `PATCH` | `/api/cards/{id}` | Update / move a card |
-| `DELETE` | `/api/cards/{id}` | Delete a card |
+| `GET` | `/api/boards` | List the user's boards |
+| `POST` | `/api/boards` | Create a board |
+| `PATCH` | `/api/boards/{id}` | Rename a board |
+| `DELETE` | `/api/boards/{id}` | Delete a board |
+| `GET` | `/api/board?board_id=` | Fetch a board's Kanban (defaults to the user's first board) |
+| `PUT` | `/api/board?board_id=` | Replace board state (schema-validated) |
+| `POST` | `/api/cards?board_id=` | Create a card |
+| `PATCH` | `/api/cards/{id}?board_id=` | Update / move a card |
+| `DELETE` | `/api/cards/{id}?board_id=` | Delete a card |
 | `POST` | `/api/ai` | Proxy prompt to OpenRouter; merges board updates |
+
+Board/card endpoints enforce ownership — accessing another user's board returns `404`.
