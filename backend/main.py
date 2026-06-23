@@ -51,6 +51,11 @@ def serve_static(full_path: str):
     requested = os.path.join(config.STATIC_DIR, full_path)
     if os.path.isfile(requested):
         return FileResponse(requested)
+    # Next.js static export emits "<route>.html" for each page, so map
+    # extensionless deep links (e.g. /register, /login) to their HTML file.
+    html_candidate = os.path.join(config.STATIC_DIR, f"{full_path}.html")
+    if full_path and os.path.isfile(html_candidate):
+        return FileResponse(html_candidate, media_type="text/html")
     index = os.path.join(config.STATIC_DIR, "index.html")
     if os.path.exists(index):
         return FileResponse(index, media_type="text/html")

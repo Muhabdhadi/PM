@@ -17,12 +17,13 @@ test.beforeEach(async ({ page }) => {
   await page.request.post("/api/login", {
     data: { username: "user", password: "password" },
   });
+  // Reset the default board to a known state.
   await page.request.put("/api/board", { data: SEED_BOARD });
 });
 
-test("loads the kanban board", async ({ page }) => {
+test("loads the workspace and board", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "My Board" })).toBeVisible();
   await expect(page.locator('[data-testid^="column-"]')).toHaveCount(5);
 });
 
@@ -58,4 +59,21 @@ test("moves a card between columns", async ({ page }) => {
   );
   await page.mouse.up();
   await expect(targetColumn.getByTestId("card-card-1")).toBeVisible();
+});
+
+test("creates a new board and switches to it", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "My Board" })).toBeVisible();
+
+  const name = `E2E Board ${Date.now()}`;
+  await page.getByRole("button", { name: /new board/i }).click();
+  await page.getByLabel("New board name").fill(name);
+  await page.getByLabel("New board name").press("Enter");
+
+  // The new board becomes active and its name shows as the heading.
+  await expect(page.getByRole("heading", { name })).toBeVisible();
+
+  // Switch back to the default board.
+  await page.getByText("My Board", { exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "My Board" })).toBeVisible();
 });

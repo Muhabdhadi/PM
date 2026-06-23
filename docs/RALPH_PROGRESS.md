@@ -9,7 +9,7 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
       multiple boards per user; board CRUD endpoints; cards scoped to a board.
       Backward-compatible defaults keep `/api/board` + `/api/cards` working on a
       per-user default board. Full backend test coverage (19 tests).
-- [ ] **Phase 2 — Frontend auth & boards**: registration page, boards list / switcher,
+- [x] **Phase 2 — Frontend auth & boards**: registration page, boards list / switcher,
       create/rename/delete boards, wire to new API. Unit + e2e tests.
 - [ ] **Phase 3 — PM card features**: labels, priority, due dates, assignee/description.
       Backend models + endpoints + frontend card editor. Tests.
@@ -31,4 +31,14 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
   - `ai.py`: scoped to resolved board.
   - Tests: `test_users.py`, `test_boards.py` added; limiter disabled in tests.
     19 backend + 7 frontend unit tests green.
-- Next: Phase 2 — frontend registration page + boards switcher wired to new API.
+- Completed Phase 2 frontend auth & multi-board workspace:
+  - `lib/api.ts`: typed client for auth, boards CRUD, board/card ops (board_id aware).
+  - `Workspace.tsx` shell: responsive sidebar + mobile drawer, active-board state.
+  - `BoardSidebar.tsx`: list / switch / create / rename / delete boards + sign out.
+  - `KanbanBoard.tsx`: takes `boardId`, uses api helpers, touch sensor + mobile
+    horizontal column scroll; `ChatSidebar` now collapsible + board-scoped.
+  - `/register` page + login page register link; `AuthGate` renders Workspace.
+  - `main.py`: serve `<route>.html` for extensionless deep links (fixes /register).
+  - Tests: BoardSidebar (6) + Workspace (2) unit tests; e2e create-board, register,
+    redirect specs. 19 backend + 15 frontend unit + 7 e2e all green.
+- Next: Phase 3 — richer card features (labels, priority, due date, description editor).

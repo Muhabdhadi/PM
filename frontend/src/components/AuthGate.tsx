@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { KanbanBoard } from "@/components/KanbanBoard";
+import Workspace from "@/components/Workspace";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 export default function AuthGate() {
   const [status, setStatus] = useState<AuthStatus>("loading");
+  const [username, setUsername] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -17,12 +18,13 @@ export default function AuthGate() {
         if (!response.ok) throw new Error("auth fetch failed");
         const data = await response.json();
         if (data.authenticated) {
+          setUsername(data.username ?? null);
           setStatus("authenticated");
         } else {
           setStatus("unauthenticated");
           router.replace("/login");
         }
-      } catch (error) {
+      } catch {
         setStatus("unauthenticated");
         router.replace("/login");
       }
@@ -33,11 +35,15 @@ export default function AuthGate() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--surface)] text-[var(--gray-text)]">
         <p>Checking authentication...</p>
       </div>
     );
   }
 
-  return <KanbanBoard />;
+  if (status !== "authenticated") {
+    return null;
+  }
+
+  return <Workspace username={username} />;
 }

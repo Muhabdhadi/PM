@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import * as api from "@/lib/api";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("user");
@@ -16,20 +18,12 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        const body = await response.json();
-        setError(body.detail || "Invalid username or password");
-      } else {
-        router.replace("/");
-      }
+      await api.login(username, password);
+      router.replace("/");
     } catch (err) {
-      setError("Login failed. Please try again.");
+      setError(
+        err instanceof api.ApiError ? err.message : "Login failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -78,6 +72,13 @@ export default function LoginPage() {
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
+
+        <p className="mt-6 text-sm text-slate-600">
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="font-semibold text-[var(--primary-blue)]">
+            Create one
+          </Link>
+        </p>
 
         <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm text-slate-600">
           Demo credentials:
