@@ -4,6 +4,10 @@ import path from "path";
 export default defineConfig({
   testDir: "./tests",
   timeout: 60_000,
+  // Tests share a single backend + the seeded "user" account/board, so run
+  // serially to avoid cross-test database contention.
+  workers: 1,
+  fullyParallel: false,
   expect: {
     timeout: 10_000,
   },

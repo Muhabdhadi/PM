@@ -1,4 +1,4 @@
-import { moveCard, type Column } from "@/lib/kanban";
+import { isOverdue, moveCard, type Column } from "@/lib/kanban";
 
 describe("moveCard", () => {
   const baseColumns: Column[] = [
@@ -21,5 +21,18 @@ describe("moveCard", () => {
     const result = moveCard(baseColumns, "card-1", "col-b");
     expect(result[0].cardIds).toEqual(["card-2"]);
     expect(result[1].cardIds).toEqual(["card-3", "card-1"]);
+  });
+});
+
+describe("isOverdue", () => {
+  it("returns false for empty or invalid dates", () => {
+    expect(isOverdue(undefined)).toBe(false);
+    expect(isOverdue("")).toBe(false);
+    expect(isOverdue("not-a-date")).toBe(false);
+  });
+
+  it("returns true for a past date and false for a future date", () => {
+    expect(isOverdue("2000-01-01")).toBe(true);
+    expect(isOverdue("2999-01-01")).toBe(false);
   });
 });

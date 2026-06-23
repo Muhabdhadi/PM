@@ -1,7 +1,29 @@
+export type Priority = "low" | "medium" | "high";
+
 export type Card = {
   id: string;
   title: string;
   details: string;
+  priority?: Priority;
+  dueDate?: string;
+  labels?: string[];
+};
+
+export const PRIORITIES: Priority[] = ["low", "medium", "high"];
+
+export const priorityStyles: Record<Priority, string> = {
+  low: "bg-emerald-100 text-emerald-700",
+  medium: "bg-amber-100 text-amber-700",
+  high: "bg-rose-100 text-rose-700",
+};
+
+export const isOverdue = (dueDate?: string): boolean => {
+  if (!dueDate) return false;
+  const due = new Date(dueDate);
+  if (Number.isNaN(due.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return due < today;
 };
 
 export type Column = {

@@ -15,6 +15,8 @@ import {
 } from "@dnd-kit/core";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
+import { CardEditor, type CardPatch } from "@/components/CardEditor";
+import type { NewCardInput } from "@/components/NewCardForm";
 import ChatSidebar from "@/components/ChatSidebar";
 import * as api from "@/lib/api";
 import {
@@ -33,6 +35,7 @@ type KanbanBoardProps = {
 export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
   const [board, setBoard] = useState<BoardData>(() => initialData);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -98,9 +101,15 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
     });
   };
 
-  const handleAddCard = (columnId: string, title: string, details: string) => {
+  const handleAddCard = (columnId: string, input: NewCardInput) => {
     const id = createId("card");
-    const newCard = { id, title, details: details || "No details yet." };
+    const newCard = {
+      id,
+      title: input.title,
+      details: input.details || "No details yet.",
+      ...(input.priority ? { priority: input.priority } : {}),
+      ...(input.dueDate ? { dueDate: input.dueDate } : {}),
+    };
 
     setBoard((prev) => ({
       ...prev,
@@ -153,6 +162,50 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
     });
   };
 
+  const handleUpdateCard = (cardId: string, patch: CardPatch) => {
+    const prevBoard = board;
+    setBoard((prev) => {
+      const existing = prev.cards[cardId];
+      if (!existing) return prev;
+      const next = { ...existing };
+      if (patch.title !== undefined) next.title = patch.title;
+      if (patch.details !== undefined) next.details = patch.details;
+      if (patch.priority !== undefined) {
+        if (patch.priority) next.priority = patch.priority;
+        else delete next.priority;
+      }
+      if (patch.dueDate !== undefined) {
+        if (patch.dueDate) next.dueDate = patch.dueDate;
+        else delete next.dueDate;
+      }
+      if (patch.labels !== undefined) {
+        if (patch.labels.length) next.labels = patch.labels;
+        else delete next.labels;
+      }
+      return { ...prev, cards: { ...prev.cards, [cardId]: next } };
+    });
+
+    api
+      .updateCard(
+        cardId,
+        {
+          title: patch.title,
+          details: patch.details,
+          priority: patch.priority,
+          dueDate: patch.dueDate,
+          labels: patch.labels,
+        },
+        boardId
+      )
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      })
+      .catch((err) => {
+        console.error("Failed to persist card update:", err);
+        setBoard(prevBoard);
+      });
+  };
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -176,6 +229,7 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
   }, [router, boardId]);
 
   const activeCard = activeCardId ? cardsById[activeCardId] ?? null : null;
+  const editingCard = editingCardId ? cardsById[editingCardId] ?? null : null;
 
   return (
     <DndContext
@@ -193,6 +247,7 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
               onRename={handleRenameColumn}
               onAddCard={handleAddCard}
               onDeleteCard={handleDeleteCard}
+              onEditCard={setEditingCardId}
             />
           </div>
         ))}
@@ -205,6 +260,21 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
         ) : null}
       </DragOverlay>
       <ChatSidebar board={board} boardId={boardId} onApplyBoard={(b) => setBoard(b)} />
+
+      {editingCard ? (
+        <CardEditor
+          card={editingCard}
+          onSave={(patch) => handleUpdateCard(editingCard.id, patch)}
+          onDelete={() => {
+            const columnId = board.columns.find((c) =>
+              c.cardIds.includes(editingCard.id)
+            )?.id;
+            if (columnId) handleDeleteCard(columnId, editingCard.id);
+            setEditingCardId(null);
+          }}
+          onClose={() => setEditingCardId(null)}
+        />
+      ) : null}
     </DndContext>
   );
 };

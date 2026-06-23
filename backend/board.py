@@ -78,6 +78,10 @@ def create_card(card: CardCreate, board_id: int | None = None, user=Depends(requ
     board = db.get_board_kanban(resolved) or {"columns": [], "cards": {}}
     card_id = card.id or f"card-{secrets.token_hex(4)}"
     card_obj = {"id": card_id, "title": card.title, "details": card.details}
+    for field in ("priority", "dueDate", "labels"):
+        value = getattr(card, field)
+        if value is not None:
+            card_obj[field] = value
     col = next((c for c in board["columns"] if c["id"] == card.columnId), None)
     if col is None:
         raise HTTPException(status_code=400, detail="Invalid columnId")
@@ -100,10 +104,20 @@ def update_card(
     if card_id not in cards:
         raise HTTPException(status_code=404, detail="Card not found")
     card = cards[card_id]
+    provided = payload.model_dump(exclude_unset=True)
     if payload.title is not None:
         card["title"] = payload.title
     if payload.details is not None:
         card["details"] = payload.details
+    # Metadata fields: a provided value (incl. null/empty) is applied so the
+    # editor can both set and clear them.
+    for field in ("priority", "dueDate", "labels"):
+        if field in provided:
+            value = provided[field]
+            if value in (None, "", []):
+                card.pop(field, None)
+            else:
+                card[field] = value
     if payload.columnId is not None:
         for c in board["columns"]:
             if card_id in c["cardIds"]:

@@ -55,3 +55,52 @@ def test_create_update_delete_card_flow(client):
     board = resp.json()["board"]
     assert "card-test-1" not in board["cards"]
     assert not any("card-test-1" in c["cardIds"] for c in board["columns"])
+
+
+def test_card_metadata_fields(client):
+    login(client)
+    client.put("/api/board", json=FRESH_BOARD)
+
+    created = client.post(
+        "/api/cards",
+        json={
+            "id": "card-meta",
+            "title": "Ship it",
+            "details": "release",
+            "columnId": "col-backlog",
+            "priority": "high",
+            "dueDate": "2026-07-01",
+            "labels": ["release", "urgent"],
+        },
+    )
+    assert created.status_code == 200
+    card = created.json()["card"]
+    assert card["priority"] == "high"
+    assert card["dueDate"] == "2026-07-01"
+    assert card["labels"] == ["release", "urgent"]
+
+    # update clears priority and changes labels
+    updated = client.patch(
+        "/api/cards/card-meta",
+        json={"priority": None, "labels": ["release"]},
+    )
+    assert updated.status_code == 200
+    card = updated.json()["card"]
+    assert "priority" not in card
+    assert card["labels"] == ["release"]
+
+    # the cleared/changed values survive a reload
+    board = client.get("/api/board").json()["board"]
+    stored = board["cards"]["card-meta"]
+    assert "priority" not in stored
+    assert stored["labels"] == ["release"]
+
+
+def test_card_rejects_invalid_priority(client):
+    login(client)
+    client.put("/api/board", json=FRESH_BOARD)
+    resp = client.post(
+        "/api/cards",
+        json={"title": "Bad", "columnId": "col-backlog", "priority": "urgent"},
+    )
+    assert resp.status_code == 422

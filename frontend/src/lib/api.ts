@@ -130,7 +130,15 @@ export async function createCard(
 
 export async function updateCard(
   cardId: string,
-  patch: { columnId?: string; position?: number; title?: string; details?: string },
+  patch: {
+    columnId?: string;
+    position?: number;
+    title?: string;
+    details?: string;
+    priority?: string | null;
+    dueDate?: string | null;
+    labels?: string[];
+  },
   boardId?: number
 ) {
   return fetch(`/api/cards/${cardId}${boardQs(boardId)}`, {

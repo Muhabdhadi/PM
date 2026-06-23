@@ -1,4 +1,8 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
+
+Priority = Literal["low", "medium", "high"]
 
 
 class LoginData(BaseModel):
@@ -29,6 +33,9 @@ class KanbanCard(BaseModel):
     id: str
     title: str
     details: str
+    priority: Priority | None = None
+    dueDate: str | None = None
+    labels: list[str] | None = None
 
 
 class KanbanUpdate(BaseModel):
@@ -41,6 +48,9 @@ class CardCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
     details: str = Field("", max_length=5000)
     columnId: str
+    priority: Priority | None = None
+    dueDate: str | None = Field(default=None, max_length=40)
+    labels: list[str] | None = Field(default=None, max_length=20)
 
 
 class CardUpdate(BaseModel):
@@ -48,6 +58,9 @@ class CardUpdate(BaseModel):
     details: str | None = None
     columnId: str | None = None
     position: int | None = Field(default=None, ge=0)
+    priority: Priority | None = None
+    dueDate: str | None = Field(default=None, max_length=40)
+    labels: list[str] | None = Field(default=None, max_length=20)
 
 
 class AIRequest(BaseModel):

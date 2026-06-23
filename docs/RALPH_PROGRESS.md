@@ -11,8 +11,8 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
       per-user default board. Full backend test coverage (19 tests).
 - [x] **Phase 2 — Frontend auth & boards**: registration page, boards list / switcher,
       create/rename/delete boards, wire to new API. Unit + e2e tests.
-- [ ] **Phase 3 — PM card features**: labels, priority, due dates, assignee/description.
-      Backend models + endpoints + frontend card editor. Tests.
+- [x] **Phase 3 — PM card features**: labels, priority, due dates, rich description
+      via a card editor modal. Backend models + endpoints + frontend editor. Tests.
 - [ ] **Phase 4 — UI overhaul + mobile responsive**: design system pass, responsive
       layout (mobile column scroll, drawer nav), accessible components. e2e mobile viewport.
 - [ ] **Phase 5 — Polish**: search/filter, activity, AI scoped to active board, docs.
@@ -41,4 +41,15 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
   - `main.py`: serve `<route>.html` for extensionless deep links (fixes /register).
   - Tests: BoardSidebar (6) + Workspace (2) unit tests; e2e create-board, register,
     redirect specs. 19 backend + 15 frontend unit + 7 e2e all green.
-- Next: Phase 3 — richer card features (labels, priority, due date, description editor).
+- Completed Phase 3 richer cards:
+  - Backend: KanbanCard/CardCreate/CardUpdate gain `priority` (low/medium/high),
+    `dueDate`, `labels`; create/update persist them; update can clear them.
+  - Frontend: `kanban.ts` Card type + priority styles + `isOverdue`; KanbanCard
+    renders priority/due/label badges + Edit button; `CardEditor` modal (title,
+    description, priority, due date, labels, delete); NewCardForm gains priority +
+    due date; KanbanBoard `handleUpdateCard` (optimistic + revert).
+  - Tests: backend card-metadata + invalid-priority; CardEditor (3), NewCardForm (2),
+    isOverdue (2) unit tests; e2e card-edit. Made e2e serial (workers:1) to avoid
+    shared-DB contention; removed dnd `attributes` (role=button) that broke buttons.
+    21 backend + 22 frontend unit + 8 e2e all green.
+- Next: Phase 4 — UI overhaul polish & accessibility; Phase 5 — search/filter + AI scoping.

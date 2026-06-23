@@ -61,6 +61,20 @@ test("moves a card between columns", async ({ page }) => {
   await expect(targetColumn.getByTestId("card-card-1")).toBeVisible();
 });
 
+test("edits a card to add a priority", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Edit Seed card" }).click();
+  const dialog = page.getByRole("dialog", { name: /edit card/i });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel("Priority").selectOption("high");
+  await dialog.getByLabel("Labels (comma separated)").fill("urgent");
+  await dialog.getByRole("button", { name: /^save$/i }).click();
+
+  const card = page.getByTestId("card-card-1");
+  await expect(card.getByText("high")).toBeVisible();
+  await expect(card.getByText("urgent")).toBeVisible();
+});
+
 test("creates a new board and switches to it", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "My Board" })).toBeVisible();
@@ -76,4 +90,8 @@ test("creates a new board and switches to it", async ({ page }) => {
   // Switch back to the default board.
   await page.getByText("My Board", { exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "My Board" })).toBeVisible();
+
+  // Clean up the board we created so the dev DB doesn't accumulate.
+  await page.getByRole("button", { name: `Delete ${name}` }).click();
+  await expect(page.getByRole("button", { name })).toHaveCount(0);
 });
