@@ -15,6 +15,7 @@ A multi-user Kanban project management web app with a Next.js frontend and a Fas
 - **Search & filter** — filter visible cards by text, priority, and label; a board summary shows total / done / overdue counts.
 - **AI assistant** — chat sidebar powered by OpenRouter that can read and update the active board via validated structured outputs.
 - **Responsive UI** — sidebar collapses to a drawer on mobile; the board scrolls horizontally with touch drag support.
+- **Dark mode** — theme toggle that persists to `localStorage` and respects the OS `prefers-color-scheme`, applied before first paint (no flash); built on CSS-variable design tokens.
 - Board state persisted in SQLite (`backend/pm.db`); session tokens stored with a 24-hour expiry.
 
 ## Architecture
@@ -77,13 +78,13 @@ cd backend
 py -m pytest -v
 ```
 
-**Frontend unit tests** (42 tests):
+**Frontend unit tests** (44 tests):
 ```powershell
 cd frontend
 npm run test:unit
 ```
 
-**End-to-end tests** (13 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
+**End-to-end tests** (14 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
 ```powershell
 cd frontend
 npx playwright test

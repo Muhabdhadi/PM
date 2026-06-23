@@ -64,7 +64,7 @@ export default function ChatSidebar({
   }
 
   return (
-    <aside className="fixed inset-x-4 bottom-4 z-30 rounded-2xl border border-[var(--stroke)] bg-white/95 p-4 shadow-[var(--shadow)] backdrop-blur sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[360px]">
+    <aside className="fixed inset-x-4 bottom-4 z-30 rounded-2xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-4 shadow-[var(--shadow)] backdrop-blur sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[360px]">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[var(--navy-dark)]">AI Assistant</h3>
         <button

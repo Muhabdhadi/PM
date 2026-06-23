@@ -136,6 +136,15 @@ test("adds and removes a column", async ({ page }) => {
   await expect(page.locator('[data-testid^="column-"]')).toHaveCount(5);
 });
 
+test("toggles dark mode", async ({ page }) => {
+  await page.goto("/");
+  const html = page.locator("html");
+  const before = (await html.getAttribute("class")) ?? "";
+  await page.getByRole("button", { name: /toggle dark mode/i }).click();
+  const after = (await html.getAttribute("class")) ?? "";
+  expect(before.includes("dark")).not.toBe(after.includes("dark"));
+});
+
 test("creates a new board and switches to it", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "My Board" })).toBeVisible();

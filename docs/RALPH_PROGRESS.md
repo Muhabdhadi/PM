@@ -105,6 +105,17 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
     avoid the optimistic-write race). 32 backend + 42 frontend unit + 13 e2e green.
 - Next: further a11y/UX polish (focus management, empty states, dark mode?).
 
+### Iteration 7 (UI/UX)
+- Dark mode: `html.dark` CSS-variable overrides; converted hardcoded `bg-white`/
+  slate colors across components + login/register to design tokens; `ThemeToggle`
+  (persists to localStorage, aria-pressed) in the sidebar; no-FOUC init script in
+  layout that also respects `prefers-color-scheme`. Global `:focus-visible` ring.
+- Fixed a latent e2e flakiness bug: the real server's per-IP rate limiter tripped
+  on the serial suite's repeated logins (429 → redirect to /login). Added
+  `DISABLE_RATE_LIMIT` env (config.limiter `enabled`) and set it in Playwright's
+  webServer. 32 backend + 44 frontend unit + 14 e2e green.
+- Next: empty states, loading skeletons, modal focus management.
+
 ### Iteration 5
 - Card comments (collaboration):
   - Backend: `comments` on KanbanCard; `POST /api/cards/{id}/comments` appends

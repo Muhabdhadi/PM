@@ -43,7 +43,7 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
               setFormState((prev) => ({ ...prev, title: event.target.value }))
             }
             placeholder="Card title"
-            className="w-full rounded-xl border border-[var(--stroke)] bg-white px-3 py-2 text-sm font-medium text-[var(--navy-dark)] outline-none transition focus:border-[var(--primary-blue)]"
+            className="w-full rounded-xl border border-[var(--stroke)] bg-[var(--surface-strong)] px-3 py-2 text-sm font-medium text-[var(--navy-dark)] outline-none transition focus:border-[var(--primary-blue)]"
             required
           />
           <textarea
@@ -53,7 +53,7 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
             }
             placeholder="Details"
             rows={3}
-            className="w-full resize-none rounded-xl border border-[var(--stroke)] bg-white px-3 py-2 text-sm text-[var(--gray-text)] outline-none transition focus:border-[var(--primary-blue)]"
+            className="w-full resize-none rounded-xl border border-[var(--stroke)] bg-[var(--surface-strong)] px-3 py-2 text-sm text-[var(--gray-text)] outline-none transition focus:border-[var(--primary-blue)]"
           />
           <div className="flex gap-2">
             <select
@@ -65,7 +65,7 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
                 }))
               }
               aria-label="Priority"
-              className="flex-1 rounded-xl border border-[var(--stroke)] bg-white px-2 py-2 text-xs text-[var(--navy-dark)] outline-none transition focus:border-[var(--primary-blue)]"
+              className="flex-1 rounded-xl border border-[var(--stroke)] bg-[var(--surface-strong)] px-2 py-2 text-xs text-[var(--navy-dark)] outline-none transition focus:border-[var(--primary-blue)]"
             >
               <option value="">No priority</option>
               {PRIORITIES.map((p) => (
@@ -81,7 +81,7 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
                 setFormState((prev) => ({ ...prev, dueDate: event.target.value }))
               }
               aria-label="Due date"
-              className="flex-1 rounded-xl border border-[var(--stroke)] bg-white px-2 py-2 text-xs text-[var(--navy-dark)] outline-none transition focus:border-[var(--primary-blue)]"
+              className="flex-1 rounded-xl border border-[var(--stroke)] bg-[var(--surface-strong)] px-2 py-2 text-xs text-[var(--navy-dark)] outline-none transition focus:border-[var(--primary-blue)]"
             />
           </div>
           <div className="flex items-center gap-2">

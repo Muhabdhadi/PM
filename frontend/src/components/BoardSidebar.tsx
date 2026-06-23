@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import clsx from "clsx";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { BoardSummary } from "@/lib/api";
 
 type BoardSidebarProps = {
@@ -167,13 +168,16 @@ export const BoardSidebar = ({
         <p className="truncate text-sm font-semibold text-[var(--navy-dark)]">
           {username ?? "Signed in"}
         </p>
-        <button
-          type="button"
-          onClick={onLogout}
-          className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary-blue)] transition hover:text-[var(--secondary-purple)]"
-        >
-          Sign out
-        </button>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={onLogout}
+            className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary-blue)] transition hover:text-[var(--secondary-purple)]"
+          >
+            Sign out
+          </button>
+          <ThemeToggle />
+        </div>
       </div>
     </div>
   );

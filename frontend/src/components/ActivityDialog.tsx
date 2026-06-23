@@ -36,7 +36,7 @@ export const ActivityDialog = ({ boardId, onClose }: ActivityDialogProps) => {
         role="dialog"
         aria-label="Board activity"
         aria-modal="true"
-        className="relative w-full max-w-md rounded-2xl border border-[var(--stroke)] bg-white p-6 shadow-[var(--shadow)]"
+        className="relative w-full max-w-md rounded-2xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-6 shadow-[var(--shadow)]"
       >
         <h3 className="font-display text-lg font-semibold text-[var(--navy-dark)]">Activity</h3>
 

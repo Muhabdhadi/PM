@@ -22,6 +22,9 @@ export default defineConfig({
     url: "http://127.0.0.1:8000/health",
     reuseExistingServer: true,
     timeout: 30_000,
+    // Disable per-IP rate limiting so the serial suite's repeated logins
+    // don't trip the 10/min limit.
+    env: { ...process.env, DISABLE_RATE_LIMIT: "1" },
   },
   projects: [
     {

@@ -17,14 +17,14 @@ export const FilterBar = ({ filter, labels, onChange }: FilterBarProps) => {
         onChange={(e) => onChange({ ...filter, query: e.target.value })}
         placeholder="Search cards…"
         aria-label="Search cards"
-        className="min-w-0 flex-1 rounded-xl border border-[var(--stroke)] bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--primary-blue)] sm:max-w-xs"
+        className="min-w-0 flex-1 rounded-xl border border-[var(--stroke)] bg-[var(--surface-strong)] px-3 py-2 text-sm outline-none transition focus:border-[var(--primary-blue)] sm:max-w-xs"
       />
 
       <select
         value={filter.priority}
         onChange={(e) => onChange({ ...filter, priority: e.target.value as Priority | "" })}
         aria-label="Filter by priority"
-        className="rounded-xl border border-[var(--stroke)] bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--primary-blue)]"
+        className="rounded-xl border border-[var(--stroke)] bg-[var(--surface-strong)] px-3 py-2 text-sm outline-none transition focus:border-[var(--primary-blue)]"
       >
         <option value="">All priorities</option>
         {PRIORITIES.map((p) => (
@@ -39,7 +39,7 @@ export const FilterBar = ({ filter, labels, onChange }: FilterBarProps) => {
           value={filter.label}
           onChange={(e) => onChange({ ...filter, label: e.target.value })}
           aria-label="Filter by label"
-          className="rounded-xl border border-[var(--stroke)] bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--primary-blue)]"
+          className="rounded-xl border border-[var(--stroke)] bg-[var(--surface-strong)] px-3 py-2 text-sm outline-none transition focus:border-[var(--primary-blue)]"
         >
           <option value="">All labels</option>
           {labels.map((label) => (

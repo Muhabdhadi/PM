@@ -30,31 +30,31 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-8">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-lg">
-        <h1 className="text-2xl font-semibold text-slate-900">Sign in</h1>
-        <p className="mt-2 text-sm text-slate-600">
+    <main className="min-h-screen flex items-center justify-center bg-[var(--surface)] px-4 py-8">
+      <div className="w-full max-w-md rounded-3xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-8 shadow-[var(--shadow)]">
+        <h1 className="text-2xl font-semibold text-[var(--navy-dark)]">Sign in</h1>
+        <p className="mt-2 text-sm text-[var(--gray-text)]">
           Sign in with the demo credentials to access the kanban board.
         </p>
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Username</span>
+            <span className="text-sm font-medium text-[var(--navy-dark)]">Username</span>
             <input
               type="text"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              className="mt-2 w-full rounded-2xl border border-[var(--stroke)] bg-[var(--surface)] px-4 py-3 text-sm outline-none focus:border-[var(--primary-blue)]"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Password</span>
+            <span className="text-sm font-medium text-[var(--navy-dark)]">Password</span>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              className="mt-2 w-full rounded-2xl border border-[var(--stroke)] bg-[var(--surface)] px-4 py-3 text-sm outline-none focus:border-[var(--primary-blue)]"
             />
           </label>
 
@@ -67,20 +67,20 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-1 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-1 w-full rounded-2xl bg-[var(--navy-dark)] px-4 py-3 text-sm font-semibold text-[var(--surface-strong)] transition hover:bg-[var(--primary-blue)] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
-        <p className="mt-6 text-sm text-slate-600">
+        <p className="mt-6 text-sm text-[var(--gray-text)]">
           Don&apos;t have an account?{" "}
           <Link href="/register" className="font-semibold text-[var(--primary-blue)]">
             Create one
           </Link>
         </p>
 
-        <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+        <div className="mt-6 rounded-2xl border border-[var(--stroke)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--gray-text)]">
           Demo credentials:
           <div className="mt-2 space-y-1">
             <p>

@@ -39,7 +39,7 @@ export default function RegisterPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[var(--surface)] px-4 py-8">
-      <div className="w-full max-w-md rounded-3xl border border-[var(--stroke)] bg-white p-8 shadow-[var(--shadow)]">
+      <div className="w-full max-w-md rounded-3xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-8 shadow-[var(--shadow)]">
         <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[var(--gray-text)]">
           Kanban Studio
         </p>

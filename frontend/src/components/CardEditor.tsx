@@ -77,7 +77,7 @@ export const CardEditor = ({ card, onSave, onDelete, onClose, onAddComment }: Ca
         role="dialog"
         aria-label="Edit card"
         aria-modal="true"
-        className="relative w-full max-w-lg rounded-2xl border border-[var(--stroke)] bg-white p-6 shadow-[var(--shadow)]"
+        className="relative w-full max-w-lg rounded-2xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-6 shadow-[var(--shadow)]"
       >
         <h3 className="font-display text-lg font-semibold text-[var(--navy-dark)]">Edit card</h3>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">

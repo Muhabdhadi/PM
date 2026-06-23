@@ -80,7 +80,7 @@ export default function Workspace({ username }: { username: string | null }) {
   return (
     <div className="min-h-screen bg-[var(--surface)]">
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[var(--stroke)] bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[var(--stroke)] bg-[var(--surface-strong)] px-4 py-3 backdrop-blur lg:hidden">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
@@ -97,7 +97,7 @@ export default function Workspace({ username }: { username: string | null }) {
 
       <div className="lg:flex">
         {/* Desktop sidebar */}
-        <aside className="hidden w-72 shrink-0 border-r border-[var(--stroke)] bg-white/70 p-6 lg:block lg:h-screen lg:sticky lg:top-0">
+        <aside className="hidden w-72 shrink-0 border-r border-[var(--stroke)] bg-[var(--surface-strong)] p-6 lg:block lg:h-screen lg:sticky lg:top-0">
           <BoardSidebar
             boards={boards}
             activeId={activeId}
@@ -119,7 +119,7 @@ export default function Workspace({ username }: { username: string | null }) {
               onClick={() => setDrawerOpen(false)}
               aria-hidden
             />
-            <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-white p-6 shadow-xl">
+            <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-[var(--surface-strong)] p-6 shadow-xl">
               <BoardSidebar
                 boards={boards}
                 activeId={activeId}

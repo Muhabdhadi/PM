@@ -32,9 +32,9 @@ pytest -k test_name      # single test by name
 npm run dev              # Next.js dev server (http://localhost:3000)
 npm run build            # static export → frontend/out/
 npm run lint             # ESLint
-npm run test:unit        # Vitest unit tests (42 tests, one-shot)
+npm run test:unit        # Vitest unit tests (44 tests, one-shot)
 npm run test:unit:watch  # Vitest watch mode
-npm run test:e2e         # Playwright e2e (13 tests — builds frontend, starts backend on :8000)
+npm run test:e2e         # Playwright e2e (14 tests — builds frontend, starts backend on :8000)
 npm run test:all         # unit + e2e
 ```
 

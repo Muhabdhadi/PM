@@ -12,6 +12,17 @@
   --shadow: 0 18px 40px rgba(3, 33, 71, 0.12);
 }
 
+html.dark {
+  --primary-blue: #38b6f0;
+  --secondary-purple: #b07cc8;
+  --navy-dark: #e7ecf3;
+  --gray-text: #94a3b8;
+  --surface: #0f172a;
+  --surface-strong: #1e293b;
+  --stroke: rgba(255, 255, 255, 0.12);
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
 @theme inline {
   --color-background: var(--surface);
   --color-foreground: var(--navy-dark);
@@ -31,4 +42,13 @@ body {
 
 .font-display {
   font-family: var(--font-display), "Segoe UI", sans-serif;
+}
+
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
 }

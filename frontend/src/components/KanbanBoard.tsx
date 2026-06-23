@@ -352,7 +352,7 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
                 setNewColumnTitle("");
                 setAddingColumn(false);
               }}
-              className="rounded-3xl border border-dashed border-[var(--stroke)] bg-white/60 p-4"
+              className="rounded-3xl border border-dashed border-[var(--stroke)] bg-[var(--surface-strong)] p-4"
             >
               <input
                 autoFocus
