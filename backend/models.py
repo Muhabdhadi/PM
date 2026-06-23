@@ -31,6 +31,11 @@ class CommentCreate(BaseModel):
     text: str = Field(..., min_length=1, max_length=2000)
 
 
+class PasswordChange(BaseModel):
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6, max_length=200)
+
+
 class KanbanColumn(BaseModel):
     id: str
     title: str

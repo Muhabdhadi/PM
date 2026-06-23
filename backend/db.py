@@ -221,6 +221,14 @@ def get_user_by_id(user_id: int, db_path: str | None = None):
         ).fetchone()
 
 
+def update_user_password(user_id: int, password_hash: str, db_path: str | None = None):
+    with _conn(db_path) as conn:
+        conn.execute(
+            "UPDATE users SET password_hash=? WHERE id=?", (password_hash, user_id)
+        )
+        conn.commit()
+
+
 # --- Boards --------------------------------------------------------------
 
 def list_boards(owner_id: int, db_path: str | None = None) -> list[dict]:

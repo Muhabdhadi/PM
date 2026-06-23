@@ -21,6 +21,7 @@ const renderSidebar = (overrides: Partial<Parameters<typeof BoardSidebar>[0]> = 
     onRename: noop,
     onDelete: noop,
     onShare: noop,
+    onAccount: noop,
     onLogout: noop,
     ...overrides,
   };

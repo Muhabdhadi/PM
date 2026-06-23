@@ -4,7 +4,7 @@ A multi-user Kanban project management web app with a Next.js frontend and a Fas
 
 ## Functionality
 
-- **User accounts** — self-service registration plus login, with PBKDF2-hashed passwords. A default `user` / `password` account is seeded (credentials configurable via env vars).
+- **User accounts** — self-service registration, login, and password change, with PBKDF2-hashed passwords. A default `user` / `password` account is seeded (credentials configurable via env vars).
 - **Per-user data isolation** — each user only sees their own boards and cards.
 - **Multiple boards per user** — create, rename, switch, and delete boards from the workspace sidebar.
 - **Board collaboration** — owners can share a board with other users by username; collaborators (editors) can view and edit but cannot rename, delete, or re-share. Access is enforced server-side.
@@ -72,19 +72,19 @@ npm run dev        # http://localhost:3000
 
 ## Run tests
 
-**Backend tests** (32 tests):
+**Backend tests** (33 tests):
 ```powershell
 cd backend
 py -m pytest -v
 ```
 
-**Frontend unit tests** (46 tests):
+**Frontend unit tests** (49 tests):
 ```powershell
 cd frontend
 npm run test:unit
 ```
 
-**End-to-end tests** (14 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
+**End-to-end tests** (15 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
 ```powershell
 cd frontend
 npx playwright test
@@ -113,6 +113,7 @@ The Docker build compiles the frontend, copies the static output to `backend/sta
 | `POST` | `/api/login` | Authenticate (rate-limited: 10/min per IP) |
 | `POST` | `/api/logout` | Clear session |
 | `GET` | `/api/auth-status` | Check current session |
+| `POST` | `/api/account/password` | Change the signed-in user's password |
 | `GET` | `/api/boards` | List the user's boards |
 | `POST` | `/api/boards` | Create a board |
 | `PATCH` | `/api/boards/{id}` | Rename a board |

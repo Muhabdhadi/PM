@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { BoardSidebar } from "@/components/BoardSidebar";
 import { ShareDialog } from "@/components/ShareDialog";
+import { AccountDialog } from "@/components/AccountDialog";
 import * as api from "@/lib/api";
 import type { BoardSummary } from "@/lib/api";
 
@@ -15,6 +16,7 @@ export default function Workspace({ username }: { username: string | null }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sharingBoardId, setSharingBoardId] = useState<number | null>(null);
+  const [showAccount, setShowAccount] = useState(false);
 
   const refreshBoards = useCallback(
     async (preferredId?: number) => {
@@ -107,6 +109,7 @@ export default function Workspace({ username }: { username: string | null }) {
             onRename={handleRename}
             onDelete={handleDelete}
             onShare={setSharingBoardId}
+            onAccount={() => setShowAccount(true)}
             onLogout={handleLogout}
           />
         </aside>
@@ -129,6 +132,7 @@ export default function Workspace({ username }: { username: string | null }) {
                 onRename={handleRename}
                 onDelete={handleDelete}
                 onShare={setSharingBoardId}
+                onAccount={() => setShowAccount(true)}
                 onLogout={handleLogout}
               />
             </div>
@@ -163,6 +167,10 @@ export default function Workspace({ username }: { username: string | null }) {
           boardName={boards.find((b) => b.id === sharingBoardId)?.name ?? "board"}
           onClose={() => setSharingBoardId(null)}
         />
+      )}
+
+      {showAccount && (
+        <AccountDialog username={username} onClose={() => setShowAccount(false)} />
       )}
     </div>
   );

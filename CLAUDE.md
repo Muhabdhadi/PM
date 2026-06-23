@@ -17,7 +17,7 @@ uvicorn backend.main:app --reload   # dev server on :8000
 ### Backend tests (run from `backend/`)
 
 ```bash
-pytest                   # all 32 backend tests
+pytest                   # all 33 backend tests
 pytest test_main.py      # auth + AI proxy tests
 pytest test_board.py     # card CRUD + metadata tests
 pytest test_users.py     # registration / password hashing / data isolation
@@ -32,9 +32,9 @@ pytest -k test_name      # single test by name
 npm run dev              # Next.js dev server (http://localhost:3000)
 npm run build            # static export → frontend/out/
 npm run lint             # ESLint
-npm run test:unit        # Vitest unit tests (46 tests, one-shot)
+npm run test:unit        # Vitest unit tests (49 tests, one-shot)
 npm run test:unit:watch  # Vitest watch mode
-npm run test:e2e         # Playwright e2e (14 tests — builds frontend, starts backend on :8000)
+npm run test:e2e         # Playwright e2e (15 tests — builds frontend, starts backend on :8000)
 npm run test:all         # unit + e2e
 ```
 

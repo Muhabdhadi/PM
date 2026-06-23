@@ -46,6 +46,44 @@ def test_registered_user_can_login(client):
     assert client.get("/api/auth-status").json()["username"] == "dave"
 
 
+def test_change_password_flow(client):
+    client.post("/api/register", json={"username": "pwuser", "password": "password1"})
+
+    # wrong current password is rejected
+    bad = client.post(
+        "/api/account/password",
+        json={"current_password": "wrong", "new_password": "newpass123"},
+    )
+    assert bad.status_code == 400
+
+    # too-short new password is rejected by validation
+    short = client.post(
+        "/api/account/password",
+        json={"current_password": "password1", "new_password": "123"},
+    )
+    assert short.status_code == 422
+
+    # successful change
+    ok = client.post(
+        "/api/account/password",
+        json={"current_password": "password1", "new_password": "newpass123"},
+    )
+    assert ok.status_code == 200
+
+    # old password no longer works; new one does
+    client.post("/api/logout")
+    assert client.post("/api/login", json={"username": "pwuser", "password": "password1"}).status_code == 401
+    assert client.post("/api/login", json={"username": "pwuser", "password": "newpass123"}).status_code == 200
+
+
+def test_change_password_requires_auth(client):
+    resp = client.post(
+        "/api/account/password",
+        json={"current_password": "x", "new_password": "newpass123"},
+    )
+    assert resp.status_code == 401
+
+
 def test_data_is_isolated_between_users(client):
     # alice creates a card on her default board
     client.post("/api/register", json={"username": "alice2", "password": "password1"})

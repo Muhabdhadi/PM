@@ -4,7 +4,7 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 
 import config
 import db
-from models import LoginData, RegisterData
+from models import LoginData, PasswordChange, RegisterData
 from security import hash_password, verify_password
 
 router = APIRouter()
@@ -73,6 +73,15 @@ def logout(response: Response, session_token: str | None = Cookie(None)):
         secure=config.COOKIE_SECURE,
         samesite="strict",
     )
+    return {"status": "ok"}
+
+
+@router.post("/api/account/password")
+def change_password(data: PasswordChange, user=Depends(require_user)):
+    row = db.get_user_by_username(user["username"])
+    if row is None or not verify_password(data.current_password, row["password_hash"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    db.update_user_password(user["id"], hash_password(data.new_password))
     return {"status": "ok"}
 
 

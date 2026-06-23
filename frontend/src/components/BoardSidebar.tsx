@@ -14,6 +14,7 @@ type BoardSidebarProps = {
   onRename: (id: number, name: string) => void;
   onDelete: (id: number) => void;
   onShare: (id: number) => void;
+  onAccount: () => void;
   onLogout: () => void;
 };
 
@@ -28,6 +29,7 @@ export const BoardSidebar = ({
   onRename,
   onDelete,
   onShare,
+  onAccount,
   onLogout,
 }: BoardSidebarProps) => {
   const ownedCount = boards.filter(isOwned).length;
@@ -165,9 +167,14 @@ export const BoardSidebar = ({
       </nav>
 
       <div className="border-t border-[var(--stroke)] pt-4">
-        <p className="truncate text-sm font-semibold text-[var(--navy-dark)]">
+        <button
+          type="button"
+          onClick={onAccount}
+          className="block truncate text-left text-sm font-semibold text-[var(--navy-dark)] transition hover:text-[var(--primary-blue)]"
+          aria-label="Account settings"
+        >
           {username ?? "Signed in"}
-        </p>
+        </button>
         <div className="mt-2 flex items-center justify-between gap-2">
           <button
             type="button"

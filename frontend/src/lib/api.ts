@@ -71,6 +71,16 @@ export async function logout() {
   await fetch("/api/logout", { method: "POST" });
 }
 
+export async function changePassword(currentPassword: string, newPassword: string) {
+  return asJson<{ status: string }>(
+    await fetch("/api/account/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    })
+  );
+}
+
 export async function authStatus() {
   return asJson<{ authenticated: boolean; username: string | null }>(
     await fetch("/api/auth-status")

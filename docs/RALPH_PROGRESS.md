@@ -125,6 +125,16 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
   32 backend + 46 frontend unit + 14 e2e green.
 - Next: loading skeletons; keyboard DnD; per-card due-date reminders.
 
+### Iteration 9 (user management depth)
+- Account / change-password: `POST /api/account/password` (verifies current,
+  validates new ≥6); `db.update_user_password`. `AccountDialog` opened from the
+  sidebar username button; `api.changePassword`.
+- Hardened the live OpenRouter test to skip (not fail) on upstream 502/503.
+- Tests: backend change-password (success/wrong-current/short/auth) (2 cases);
+  AccountDialog unit (3); e2e (register → change password → re-login with new).
+  33 backend + 49 frontend unit + 15 e2e green.
+- Next: loading skeletons, keyboard DnD, due-date reminders.
+
 ### Iteration 5
 - Card comments (collaboration):
   - Backend: `comments` on KanbanCard; `POST /api/cards/{id}/comments` appends
