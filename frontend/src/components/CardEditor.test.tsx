@@ -92,4 +92,9 @@ describe("CardEditor", () => {
     render(<CardEditor card={card} onSave={vi.fn()} onDelete={vi.fn()} onClose={vi.fn()} />);
     expect(screen.queryByLabelText(/add a comment/i)).not.toBeInTheDocument();
   });
+
+  it("focuses the title field when opened", () => {
+    render(<CardEditor card={card} onSave={vi.fn()} onDelete={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByDisplayValue("Old title")).toHaveFocus();
+  });
 });

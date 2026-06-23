@@ -78,7 +78,7 @@ cd backend
 py -m pytest -v
 ```
 
-**Frontend unit tests** (44 tests):
+**Frontend unit tests** (46 tests):
 ```powershell
 cd frontend
 npm run test:unit

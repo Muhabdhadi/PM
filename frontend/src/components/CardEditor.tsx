@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { PRIORITIES, type Card, type Priority } from "@/lib/kanban";
 
 export type CardPatch = {
@@ -29,6 +29,11 @@ export const CardEditor = ({ card, onSave, onDelete, onClose, onAddComment }: Ca
   const [assignee, setAssignee] = useState(card.assignee ?? "");
   const [commentText, setCommentText] = useState("");
   const [commentBusy, setCommentBusy] = useState(false);
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -77,7 +82,7 @@ export const CardEditor = ({ card, onSave, onDelete, onClose, onAddComment }: Ca
         role="dialog"
         aria-label="Edit card"
         aria-modal="true"
-        className="relative w-full max-w-lg rounded-2xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-6 shadow-[var(--shadow)]"
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-6 shadow-[var(--shadow)]"
       >
         <h3 className="font-display text-lg font-semibold text-[var(--navy-dark)]">Edit card</h3>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -86,6 +91,7 @@ export const CardEditor = ({ card, onSave, onDelete, onClose, onAddComment }: Ca
               Title
             </span>
             <input
+              ref={titleRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required

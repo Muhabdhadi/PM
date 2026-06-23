@@ -67,6 +67,7 @@ test("filters cards by search query", async ({ page }) => {
 
   await page.getByLabel("Search cards").fill("nonexistent term");
   await expect(page.getByTestId("card-card-1")).toHaveCount(0);
+  await expect(page.getByText(/no cards match your filters/i)).toBeVisible();
 
   await page.getByLabel("Search cards").fill("seed");
   await expect(page.getByTestId("card-card-1")).toBeVisible();

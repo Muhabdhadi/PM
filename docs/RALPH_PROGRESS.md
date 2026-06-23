@@ -116,6 +116,15 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
   webServer. 32 backend + 44 frontend unit + 14 e2e green.
 - Next: empty states, loading skeletons, modal focus management.
 
+### Iteration 8 (UX/a11y polish)
+- Modal focus management: CardEditor focuses its title on open; ShareDialog focuses
+  the invite input. CardEditor is now scrollable on small screens (max-h-[90vh]).
+- Empty state: "No cards match your filters." banner (role=status) when a filter
+  hides everything.
+- Tests: CardEditor/ShareDialog focus unit tests; e2e empty-state assertion.
+  32 backend + 46 frontend unit + 14 e2e green.
+- Next: loading skeletons; keyboard DnD; per-card due-date reminders.
+
 ### Iteration 5
 - Card comments (collaboration):
   - Backend: `comments` on KanbanCard; `POST /api/cards/{id}/comments` appends

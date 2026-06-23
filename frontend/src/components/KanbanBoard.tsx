@@ -294,6 +294,13 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
   const labels = useMemo(() => collectLabels(board), [board]);
   const stats = useMemo(() => getBoardStats(board), [board]);
   const filtering = isFilterActive(filter);
+  const visibleCount = useMemo(
+    () =>
+      filtering
+        ? Object.values(board.cards).filter((c) => cardMatchesFilter(c, filter)).length
+        : stats.total,
+    [board.cards, filter, filtering, stats.total]
+  );
 
   return (
     <DndContext
@@ -323,6 +330,15 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
         </div>
         <FilterBar filter={filter} labels={labels} onChange={setFilter} />
       </div>
+
+      {filtering && visibleCount === 0 ? (
+        <p
+          role="status"
+          className="mb-4 rounded-xl border border-dashed border-[var(--stroke)] px-4 py-3 text-sm text-[var(--gray-text)]"
+        >
+          No cards match your filters.
+        </p>
+      ) : null}
 
       <div className="flex items-start gap-4 overflow-x-auto pb-4 sm:gap-5 lg:gap-6">
         {board.columns.map((column) => (

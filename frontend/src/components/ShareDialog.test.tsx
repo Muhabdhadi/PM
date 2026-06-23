@@ -33,6 +33,11 @@ describe("ShareDialog", () => {
     expect(screen.getByText("owner")).toBeInTheDocument();
   });
 
+  it("focuses the invite input when opened", () => {
+    render(<ShareDialog boardId={5} boardName="Roadmap" onClose={vi.fn()} />);
+    expect(screen.getByLabelText(/username to invite/i)).toHaveFocus();
+  });
+
   it("invites a member and shows the updated list", async () => {
     render(<ShareDialog boardId={5} boardName="Roadmap" onClose={vi.fn()} />);
     await screen.findByText("user");

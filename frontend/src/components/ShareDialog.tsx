@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import * as api from "@/lib/api";
 import type { BoardMember } from "@/lib/api";
 
@@ -15,6 +15,11 @@ export const ShareDialog = ({ boardId, boardName, onClose }: ShareDialogProps) =
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -77,6 +82,7 @@ export const ShareDialog = ({ boardId, boardName, onClose }: ShareDialogProps) =
 
         <form onSubmit={handleAdd} className="mt-4 flex gap-2">
           <input
+            ref={inputRef}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Username"
