@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 
 import db
-from auth import get_username_from_session
+from auth import require_user
+from board import _resolve_board_id
 from models import AIRequest, StructuredAIResponse
 
 router = APIRouter()
@@ -54,9 +55,8 @@ def echo(q: str = "hello"):
 
 
 @router.post("/api/ai")
-def ai_proxy(payload: AIRequest, username: str | None = Depends(get_username_from_session)):
-    if username is None:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+def ai_proxy(payload: AIRequest, user=Depends(require_user)):
+    board_id = _resolve_board_id(user, payload.board_id)
 
     api_key = _get_openrouter_api_key()
     messages = _build_messages(payload.board, payload.history, payload.prompt)
@@ -112,7 +112,7 @@ def ai_proxy(payload: AIRequest, username: str | None = Depends(get_username_fro
     }
 
     if structured.kanbanUpdate is not None:
-        current = db.get_board(username) or {"columns": [], "cards": {}}
+        current = db.get_board_kanban(board_id) or {"columns": [], "cards": {}}
         ai = structured.kanbanUpdate.model_dump()
         ai_col_ids = {c["id"] for c in ai["columns"]}
         board_object = {
@@ -121,7 +121,7 @@ def ai_proxy(payload: AIRequest, username: str | None = Depends(get_username_fro
             ],
             "cards": {**current.get("cards", {}), **ai["cards"]},
         }
-        db.upsert_board(username, board_object)
+        db.update_board_kanban(board_id, board_object)
         response_payload["board"] = board_object
 
     return response_payload

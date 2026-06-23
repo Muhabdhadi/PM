@@ -3,11 +3,29 @@ import json
 import os
 import threading
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+import config
+from security import hash_password
 
 DB_FILENAME = os.path.join(os.path.dirname(__file__), "pm.db")
 
 _local = threading.local()
+
+SESSION_TTL_HOURS = 24
+
+# A board's default Kanban layout. Kept here (rather than board.py) so the DB
+# layer can seed new boards without a circular import; re-exported by board.py.
+DEFAULT_BOARD = {
+    "columns": [
+        {"id": "col-backlog", "title": "Backlog", "cardIds": []},
+        {"id": "col-discovery", "title": "Discovery", "cardIds": []},
+        {"id": "col-progress", "title": "In Progress", "cardIds": []},
+        {"id": "col-review", "title": "Review", "cardIds": []},
+        {"id": "col-done", "title": "Done", "cardIds": []},
+    ],
+    "cards": {},
+}
 
 
 @contextmanager
@@ -17,6 +35,7 @@ def _conn(db_path: str | None = None):
     if db_path is not None:
         conn = sqlite3.connect(path, check_same_thread=False)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
         try:
             yield conn
         finally:
@@ -30,6 +49,7 @@ def _conn(db_path: str | None = None):
                     pass
             _local.conn = sqlite3.connect(path, check_same_thread=False)
             _local.conn.row_factory = sqlite3.Row
+            _local.conn.execute("PRAGMA foreign_keys = ON")
             _local.db_path = path
         yield _local.conn
 
@@ -38,32 +58,190 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _table_columns(conn, table: str) -> set[str]:
+    return {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _table_exists(conn, table: str) -> bool:
+    row = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone()
+    return row is not None
+
+
 def init_db(db_path: str | None = None):
     with _conn(db_path) as conn:
         conn.executescript(
             """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            """
+        )
+        _migrate_legacy(conn)
+        conn.executescript(
+            """
             CREATE TABLE IF NOT EXISTS boards (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT UNIQUE NOT NULL,
+                owner_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
                 kanban_json TEXT NOT NULL,
+                position INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS sessions (
                 token TEXT PRIMARY KEY,
-                username TEXT NOT NULL,
-                expires_at TEXT NOT NULL
+                user_id INTEGER NOT NULL,
+                expires_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
+            CREATE INDEX IF NOT EXISTS idx_boards_owner ON boards(owner_id);
             """
+        )
+        conn.commit()
+        _seed_default_user(conn)
+
+
+def _migrate_legacy(conn):
+    """Migrate the original single-board / username-session schema to the new model."""
+    # Legacy boards: (id, user_id TEXT, kanban_json, created_at, updated_at)
+    if _table_exists(conn, "boards"):
+        cols = _table_columns(conn, "boards")
+        if "user_id" in cols and "owner_id" not in cols:
+            legacy_rows = conn.execute(
+                "SELECT user_id, kanban_json, created_at, updated_at FROM boards"
+            ).fetchall()
+            conn.execute("DROP TABLE boards")
+            conn.execute(
+                """
+                CREATE TABLE boards (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    owner_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    kanban_json TEXT NOT NULL,
+                    position INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+                """
+            )
+            for row in legacy_rows:
+                username = row["user_id"]
+                user = conn.execute(
+                    "SELECT id FROM users WHERE username=?", (username,)
+                ).fetchone()
+                if user is None:
+                    conn.execute(
+                        "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
+                        (username, hash_password(config.VALID_PASSWORD), _now()),
+                    )
+                    owner_id = conn.execute(
+                        "SELECT id FROM users WHERE username=?", (username,)
+                    ).fetchone()["id"]
+                else:
+                    owner_id = user["id"]
+                conn.execute(
+                    """
+                    INSERT INTO boards (owner_id, name, kanban_json, position, created_at, updated_at)
+                    VALUES (?, ?, ?, 0, ?, ?)
+                    """,
+                    (owner_id, "My Board", row["kanban_json"], row["created_at"], row["updated_at"]),
+                )
+
+    # Legacy sessions keyed by username -> drop (forces re-login under new model).
+    if _table_exists(conn, "sessions"):
+        cols = _table_columns(conn, "sessions")
+        if "username" in cols and "user_id" not in cols:
+            conn.execute("DROP TABLE sessions")
+    conn.commit()
+
+
+def _seed_default_user(conn):
+    """Ensure the configured default credentials exist as a user (idempotent)."""
+    count = conn.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"]
+    existing = conn.execute(
+        "SELECT id FROM users WHERE username=?", (config.VALID_USERNAME,)
+    ).fetchone()
+    if existing is None:
+        conn.execute(
+            "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
+            (config.VALID_USERNAME, hash_password(config.VALID_PASSWORD), _now()),
         )
         conn.commit()
 
 
-def get_board(user_id: str, db_path: str | None = None):
+# --- Users ---------------------------------------------------------------
+
+def create_user(username: str, password_hash: str, db_path: str | None = None) -> int:
     with _conn(db_path) as conn:
-        row = conn.execute(
-            "SELECT kanban_json FROM boards WHERE user_id = ?", (user_id,)
+        cur = conn.execute(
+            "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
+            (username, password_hash, _now()),
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def get_user_by_username(username: str, db_path: str | None = None):
+    with _conn(db_path) as conn:
+        return conn.execute(
+            "SELECT id, username, password_hash FROM users WHERE username=?", (username,)
         ).fetchone()
+
+
+def get_user_by_id(user_id: int, db_path: str | None = None):
+    with _conn(db_path) as conn:
+        return conn.execute(
+            "SELECT id, username FROM users WHERE id=?", (user_id,)
+        ).fetchone()
+
+
+# --- Boards --------------------------------------------------------------
+
+def list_boards(owner_id: int, db_path: str | None = None) -> list[dict]:
+    with _conn(db_path) as conn:
+        rows = conn.execute(
+            "SELECT id, name, position, created_at, updated_at FROM boards "
+            "WHERE owner_id=? ORDER BY position, id",
+            (owner_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def create_board(owner_id: int, name: str, kanban_obj=None, db_path: str | None = None) -> int:
+    now = _now()
+    raw = json.dumps(kanban_obj if kanban_obj is not None else DEFAULT_BOARD)
+    with _conn(db_path) as conn:
+        next_pos = conn.execute(
+            "SELECT COALESCE(MAX(position), -1) + 1 AS p FROM boards WHERE owner_id=?",
+            (owner_id,),
+        ).fetchone()["p"]
+        cur = conn.execute(
+            """
+            INSERT INTO boards (owner_id, name, kanban_json, position, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (owner_id, name, raw, next_pos, now, now),
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def get_board_row(board_id: int, db_path: str | None = None):
+    with _conn(db_path) as conn:
+        return conn.execute(
+            "SELECT id, owner_id, name, kanban_json FROM boards WHERE id=?", (board_id,)
+        ).fetchone()
+
+
+def get_board_kanban(board_id: int, db_path: str | None = None):
+    row = get_board_row(board_id, db_path)
     if not row:
         return None
     try:
@@ -72,56 +250,80 @@ def get_board(user_id: str, db_path: str | None = None):
         return None
 
 
-def upsert_board(user_id: str, board_obj, db_path: str | None = None):
-    now = _now()
-    raw = json.dumps(board_obj)
+def update_board_kanban(board_id: int, kanban_obj, db_path: str | None = None):
     with _conn(db_path) as conn:
         conn.execute(
-            """
-            INSERT INTO boards (user_id, kanban_json, created_at, updated_at)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET kanban_json = excluded.kanban_json,
-                                                updated_at = excluded.updated_at
-            """,
-            (user_id, raw, now, now),
+            "UPDATE boards SET kanban_json=?, updated_at=? WHERE id=?",
+            (json.dumps(kanban_obj), _now(), board_id),
         )
         conn.commit()
 
 
-# --- Session management (C-3, M-5) ---
+def rename_board(board_id: int, name: str, db_path: str | None = None):
+    with _conn(db_path) as conn:
+        conn.execute(
+            "UPDATE boards SET name=?, updated_at=? WHERE id=?", (name, _now(), board_id)
+        )
+        conn.commit()
 
-SESSION_TTL_HOURS = 24
+
+def delete_board(board_id: int, db_path: str | None = None):
+    with _conn(db_path) as conn:
+        conn.execute("DELETE FROM boards WHERE id=?", (board_id,))
+        conn.commit()
 
 
-def create_session(token: str, username: str, db_path: str | None = None):
-    from datetime import timedelta
+def count_boards(owner_id: int, db_path: str | None = None) -> int:
+    with _conn(db_path) as conn:
+        return conn.execute(
+            "SELECT COUNT(*) AS n FROM boards WHERE owner_id=?", (owner_id,)
+        ).fetchone()["n"]
+
+
+def get_or_create_default_board(owner_id: int, db_path: str | None = None) -> int:
+    with _conn(db_path) as conn:
+        row = conn.execute(
+            "SELECT id FROM boards WHERE owner_id=? ORDER BY position, id LIMIT 1",
+            (owner_id,),
+        ).fetchone()
+        if row:
+            return row["id"]
+    return create_board(owner_id, "My Board", DEFAULT_BOARD, db_path)
+
+
+# --- Sessions ------------------------------------------------------------
+
+def create_session(token: str, user_id: int, db_path: str | None = None):
     expires_at = (datetime.now(timezone.utc) + timedelta(hours=SESSION_TTL_HOURS)).isoformat()
     with _conn(db_path) as conn:
         conn.execute(
-            "INSERT OR REPLACE INTO sessions (token, username, expires_at) VALUES (?, ?, ?)",
-            (token, username, expires_at),
+            "INSERT OR REPLACE INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
+            (token, user_id, expires_at),
         )
         conn.commit()
 
 
-def get_session_username(token: str, db_path: str | None = None) -> str | None:
+def get_session_user(token: str, db_path: str | None = None):
+    """Return {'id', 'username'} for a valid, unexpired session, else None."""
     now = _now()
     with _conn(db_path) as conn:
-        row = conn.execute(
-            "SELECT username FROM sessions WHERE token = ? AND expires_at > ?",
+        return conn.execute(
+            """
+            SELECT u.id AS id, u.username AS username
+            FROM sessions s JOIN users u ON u.id = s.user_id
+            WHERE s.token=? AND s.expires_at > ?
+            """,
             (token, now),
         ).fetchone()
-    return row["username"] if row else None
 
 
 def delete_session(token: str, db_path: str | None = None):
     with _conn(db_path) as conn:
-        conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+        conn.execute("DELETE FROM sessions WHERE token=?", (token,))
         conn.commit()
 
 
 def delete_expired_sessions(db_path: str | None = None):
-    now = _now()
     with _conn(db_path) as conn:
-        conn.execute("DELETE FROM sessions WHERE expires_at <= ?", (now,))
+        conn.execute("DELETE FROM sessions WHERE expires_at <= ?", (_now(),))
         conn.commit()

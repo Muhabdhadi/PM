@@ -6,6 +6,19 @@ class LoginData(BaseModel):
     password: str
 
 
+class RegisterData(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, pattern=r"^[A-Za-z0-9_.-]+$")
+    password: str = Field(..., min_length=6, max_length=200)
+
+
+class BoardCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class BoardRename(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
 class KanbanColumn(BaseModel):
     id: str
     title: str
@@ -40,6 +53,7 @@ class CardUpdate(BaseModel):
 class AIRequest(BaseModel):
     prompt: str = Field(..., max_length=2000)
     board: dict | None = None
+    board_id: int | None = None
     history: list[dict] | None = Field(default=None, max_length=50)
 
 
