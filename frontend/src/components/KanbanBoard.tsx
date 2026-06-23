@@ -19,13 +19,20 @@ import { CardEditor, type CardPatch } from "@/components/CardEditor";
 import type { NewCardInput } from "@/components/NewCardForm";
 import ChatSidebar from "@/components/ChatSidebar";
 import * as api from "@/lib/api";
+import { FilterBar } from "@/components/FilterBar";
 import {
+  cardMatchesFilter,
+  collectLabels,
   createId,
+  emptyFilter,
   findColumnId,
+  getBoardStats,
   getCardPosition,
   initialData,
+  isFilterActive,
   moveCard,
   type BoardData,
+  type CardFilter,
 } from "@/lib/kanban";
 
 type KanbanBoardProps = {
@@ -36,6 +43,7 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
   const [board, setBoard] = useState<BoardData>(() => initialData);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<CardFilter>(emptyFilter);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -230,6 +238,9 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
 
   const activeCard = activeCardId ? cardsById[activeCardId] ?? null : null;
   const editingCard = editingCardId ? cardsById[editingCardId] ?? null : null;
+  const labels = useMemo(() => collectLabels(board), [board]);
+  const stats = useMemo(() => getBoardStats(board), [board]);
+  const filtering = isFilterActive(filter);
 
   return (
     <DndContext
@@ -238,12 +249,28 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--gray-text)]">
+          <span className="rounded-full bg-[var(--surface)] px-3 py-1.5">{stats.total} cards</span>
+          <span className="rounded-full bg-[var(--surface)] px-3 py-1.5">{stats.done} done</span>
+          {stats.overdue > 0 && (
+            <span className="rounded-full bg-rose-100 px-3 py-1.5 text-rose-700">
+              {stats.overdue} overdue
+            </span>
+          )}
+        </div>
+        <FilterBar filter={filter} labels={labels} onChange={setFilter} />
+      </div>
+
       <div className="flex gap-4 overflow-x-auto pb-4 sm:gap-5 lg:grid lg:grid-cols-5 lg:gap-6 lg:overflow-visible">
         {board.columns.map((column) => (
           <div key={column.id} className="w-[80vw] shrink-0 sm:w-[300px] lg:w-auto">
             <KanbanColumn
               column={column}
-              cards={column.cardIds.map((cardId) => board.cards[cardId]).filter(Boolean)}
+              cards={column.cardIds
+                .map((cardId) => board.cards[cardId])
+                .filter(Boolean)
+                .filter((card) => !filtering || cardMatchesFilter(card, filter))}
               onRename={handleRenameColumn}
               onAddCard={handleAddCard}
               onDeleteCard={handleDeleteCard}

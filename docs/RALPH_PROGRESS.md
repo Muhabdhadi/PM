@@ -15,7 +15,8 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
       via a card editor modal. Backend models + endpoints + frontend editor. Tests.
 - [ ] **Phase 4 — UI overhaul + mobile responsive**: design system pass, responsive
       layout (mobile column scroll, drawer nav), accessible components. e2e mobile viewport.
-- [ ] **Phase 5 — Polish**: search/filter, activity, AI scoped to active board, docs.
+- [~] **Phase 5 — Polish**: search/filter + board summary DONE; AI already scoped to
+      active board (Phase 1/2). Remaining: activity log, docs refresh.
 
 ## Status log
 
@@ -53,3 +54,14 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
     shared-DB contention; removed dnd `attributes` (role=button) that broke buttons.
     21 backend + 22 frontend unit + 8 e2e all green.
 - Next: Phase 4 — UI overhaul polish & accessibility; Phase 5 — search/filter + AI scoping.
+
+### Iteration 2
+- Phase 5 (search/filter + summary):
+  - `kanban.ts`: `CardFilter`, `cardMatchesFilter`, `collectLabels`, `getBoardStats`,
+    `isFilterActive`, `emptyFilter`.
+  - `FilterBar` component (search text + priority + label + clear).
+  - `KanbanBoard`: filter state, board summary chips (total/done/overdue), filtered
+    column rendering; `KanbanColumn` SortableContext now derives from visible cards.
+  - Tests: kanban filter/stat unit tests, FilterBar unit tests, e2e search filter.
+    21 backend + 31 frontend unit + 9 e2e all green.
+- Next: Phase 4 UI/accessibility polish; then activity log + docs refresh.

@@ -17,6 +17,53 @@ export const priorityStyles: Record<Priority, string> = {
   high: "bg-rose-100 text-rose-700",
 };
 
+export type CardFilter = {
+  query: string;
+  priority: Priority | "";
+  label: string;
+};
+
+export const emptyFilter: CardFilter = { query: "", priority: "", label: "" };
+
+export const isFilterActive = (filter: CardFilter): boolean =>
+  Boolean(filter.query.trim() || filter.priority || filter.label);
+
+export const cardMatchesFilter = (card: Card, filter: CardFilter): boolean => {
+  const query = filter.query.trim().toLowerCase();
+  if (query) {
+    const haystack = `${card.title} ${card.details} ${(card.labels ?? []).join(" ")}`.toLowerCase();
+    if (!haystack.includes(query)) return false;
+  }
+  if (filter.priority && card.priority !== filter.priority) return false;
+  if (filter.label && !(card.labels ?? []).includes(filter.label)) return false;
+  return true;
+};
+
+export const collectLabels = (board: BoardData): string[] => {
+  const labels = new Set<string>();
+  Object.values(board.cards).forEach((card) =>
+    (card.labels ?? []).forEach((label) => labels.add(label))
+  );
+  return Array.from(labels).sort();
+};
+
+export type BoardStats = {
+  total: number;
+  overdue: number;
+  done: number;
+};
+
+export const getBoardStats = (board: BoardData): BoardStats => {
+  const cards = Object.values(board.cards);
+  const doneColumn = board.columns.find((c) => /done/i.test(c.title));
+  const doneIds = new Set(doneColumn?.cardIds ?? []);
+  return {
+    total: cards.length,
+    overdue: cards.filter((c) => isOverdue(c.dueDate)).length,
+    done: cards.filter((c) => doneIds.has(c.id)).length,
+  };
+};
+
 export const isOverdue = (dueDate?: string): boolean => {
   if (!dueDate) return false;
   const due = new Date(dueDate);

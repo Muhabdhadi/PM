@@ -61,6 +61,17 @@ test("moves a card between columns", async ({ page }) => {
   await expect(targetColumn.getByTestId("card-card-1")).toBeVisible();
 });
 
+test("filters cards by search query", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("card-card-1")).toBeVisible();
+
+  await page.getByLabel("Search cards").fill("nonexistent term");
+  await expect(page.getByTestId("card-card-1")).toHaveCount(0);
+
+  await page.getByLabel("Search cards").fill("seed");
+  await expect(page.getByTestId("card-card-1")).toBeVisible();
+});
+
 test("edits a card to add a priority", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Edit Seed card" }).click();
