@@ -44,6 +44,8 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [filter, setFilter] = useState<CardFilter>(emptyFilter);
+  const [addingColumn, setAddingColumn] = useState(false);
+  const [newColumnTitle, setNewColumnTitle] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -214,6 +216,33 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
       });
   };
 
+  const handleAddColumn = (title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    const id = createId("col");
+    setBoard((prev) => {
+      const nextBoard = {
+        ...prev,
+        columns: [...prev.columns, { id, title: trimmed, cardIds: [] }],
+      };
+      persistBoard(nextBoard);
+      return nextBoard;
+    });
+  };
+
+  const handleDeleteColumn = (columnId: string) => {
+    setBoard((prev) => {
+      const column = prev.columns.find((c) => c.id === columnId);
+      if (!column || column.cardIds.length > 0) return prev;
+      const nextBoard = {
+        ...prev,
+        columns: prev.columns.filter((c) => c.id !== columnId),
+      };
+      persistBoard(nextBoard);
+      return nextBoard;
+    });
+  };
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -262,9 +291,9 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
         <FilterBar filter={filter} labels={labels} onChange={setFilter} />
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4 sm:gap-5 lg:grid lg:grid-cols-5 lg:gap-6 lg:overflow-visible">
+      <div className="flex items-start gap-4 overflow-x-auto pb-4 sm:gap-5 lg:gap-6">
         {board.columns.map((column) => (
-          <div key={column.id} className="w-[80vw] shrink-0 sm:w-[300px] lg:w-auto">
+          <div key={column.id} className="w-[80vw] shrink-0 sm:w-[300px] lg:w-[280px]">
             <KanbanColumn
               column={column}
               cards={column.cardIds
@@ -275,9 +304,43 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
               onAddCard={handleAddCard}
               onDeleteCard={handleDeleteCard}
               onEditCard={setEditingCardId}
+              onDeleteColumn={handleDeleteColumn}
+              canDelete={board.columns.length > 1 && column.cardIds.length === 0}
             />
           </div>
         ))}
+
+        <div className="w-[70vw] shrink-0 sm:w-[260px] lg:w-[240px]">
+          {addingColumn ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAddColumn(newColumnTitle);
+                setNewColumnTitle("");
+                setAddingColumn(false);
+              }}
+              className="rounded-3xl border border-dashed border-[var(--stroke)] bg-white/60 p-4"
+            >
+              <input
+                autoFocus
+                value={newColumnTitle}
+                onChange={(e) => setNewColumnTitle(e.target.value)}
+                onBlur={() => !newColumnTitle.trim() && setAddingColumn(false)}
+                placeholder="Column title"
+                aria-label="New column title"
+                className="w-full rounded-xl border border-[var(--primary-blue)] px-3 py-2 text-sm outline-none"
+              />
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingColumn(true)}
+              className="w-full rounded-3xl border border-dashed border-[var(--stroke)] px-4 py-6 text-sm font-semibold text-[var(--primary-blue)] transition hover:border-[var(--primary-blue)]"
+            >
+              + Add column
+            </button>
+          )}
+        </div>
       </div>
       <DragOverlay>
         {activeCard ? (

@@ -86,6 +86,19 @@ test("edits a card to add a priority", async ({ page }) => {
   await expect(card.getByText("urgent")).toBeVisible();
 });
 
+test("adds and removes a column", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('[data-testid^="column-"]')).toHaveCount(5);
+
+  await page.getByRole("button", { name: /add column/i }).click();
+  await page.getByLabel("New column title").fill("QA");
+  await page.getByLabel("New column title").press("Enter");
+  await expect(page.locator('[data-testid^="column-"]')).toHaveCount(6);
+
+  await page.getByRole("button", { name: /delete qa column/i }).click();
+  await expect(page.locator('[data-testid^="column-"]')).toHaveCount(5);
+});
+
 test("creates a new board and switches to it", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "My Board" })).toBeVisible();

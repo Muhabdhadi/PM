@@ -64,4 +64,8 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
     column rendering; `KanbanColumn` SortableContext now derives from visible cards.
   - Tests: kanban filter/stat unit tests, FilterBar unit tests, e2e search filter.
     21 backend + 31 frontend unit + 9 e2e all green.
+- Custom columns: add/remove columns (delete enabled only for empty, non-last
+  columns); board switched to a scalable horizontal flex layout (Trello-style)
+  so arbitrary column counts work on every breakpoint. e2e add/remove column.
+  21 backend + 31 frontend unit + 10 e2e all green.
 - Next: Phase 4 UI/accessibility polish; then activity log + docs refresh.

@@ -12,6 +12,8 @@ type KanbanColumnProps = {
   onAddCard: (columnId: string, input: NewCardInput) => void;
   onDeleteCard: (columnId: string, cardId: string) => void;
   onEditCard: (cardId: string) => void;
+  onDeleteColumn: (columnId: string) => void;
+  canDelete: boolean;
 };
 
 export const KanbanColumn = ({
@@ -21,6 +23,8 @@ export const KanbanColumn = ({
   onAddCard,
   onDeleteCard,
   onEditCard,
+  onDeleteColumn,
+  canDelete,
 }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
@@ -35,11 +39,23 @@ export const KanbanColumn = ({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="w-full">
-          <div className="flex items-center gap-3">
-            <div className="h-2 w-10 rounded-full bg-[var(--accent-yellow)]" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
-              {cards.length} cards
-            </span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-2 w-10 rounded-full bg-[var(--accent-yellow)]" />
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
+                {cards.length} cards
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => onDeleteColumn(column.id)}
+              disabled={!canDelete}
+              aria-label={`Delete ${column.title} column`}
+              title={canDelete ? "Delete column" : "Empty the column first"}
+              className="rounded-full px-2 py-0.5 text-sm text-[var(--gray-text)] transition hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              ✕
+            </button>
           </div>
           <input
             value={column.title}
