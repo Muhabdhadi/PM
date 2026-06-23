@@ -15,8 +15,18 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
       via a card editor modal. Backend models + endpoints + frontend editor. Tests.
 - [ ] **Phase 4 — UI overhaul + mobile responsive**: design system pass, responsive
       layout (mobile column scroll, drawer nav), accessible components. e2e mobile viewport.
-- [~] **Phase 5 — Polish**: search/filter + board summary DONE; AI already scoped to
-      active board (Phase 1/2). Remaining: activity log, docs refresh.
+- [x] **Phase 5 — Polish**: search/filter (text/priority/label/assignee) + board
+      summary + empty state; AI scoped to active board; activity log; docs refreshed.
+
+## Final state (after iteration 10)
+
+Comprehensive multi-user Kanban PM app. Features: accounts (register/login/logout/
+change-password, hashed, per-user isolation), multiple boards, board sharing/
+collaboration with server-side access control, activity log, custom columns, rich
+cards (priority/due date/labels/assignee) with a modal editor + comment threads,
+search/filter + board summary, board-scoped AI assistant, dark mode, and a
+responsive sidebar/drawer UI with modal focus management. Tests: 34 backend +
+51 frontend unit + 16 Playwright e2e (101 total), all green.
 
 ## Status log
 
@@ -134,6 +144,17 @@ overhaul + mobile-responsive UI, strong test coverage & integration tests.
   AccountDialog unit (3); e2e (register → change password → re-login with new).
   33 backend + 49 frontend unit + 15 e2e green.
 - Next: loading skeletons, keyboard DnD, due-date reminders.
+
+### Iteration 10 (final)
+- Assignee filter: `CardFilter.assignee` + `cardMatchesFilter` + `collectAssignees`;
+  FilterBar assignee dropdown (shown when assignees exist); KanbanBoard wires it.
+  Search now also matches assignee text.
+- Tests: kanban filter/collectAssignees unit; FilterBar assignee unit; e2e
+  (assign a card → filter by assignee).
+- Final full verification: 34 backend + 51 frontend unit + 16 e2e — all green (101 total).
+- Loop reached max_iterations (10). Comprehensive PM app complete; see README for
+  the full feature list. Future ideas: loading skeletons, keyboard DnD, due-date
+  reminders/notifications, card attachments.
 
 ### Iteration 5
 - Card comments (collaboration):

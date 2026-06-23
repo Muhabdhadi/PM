@@ -30,21 +30,24 @@ export type CardFilter = {
   query: string;
   priority: Priority | "";
   label: string;
+  assignee: string;
 };
 
-export const emptyFilter: CardFilter = { query: "", priority: "", label: "" };
+export const emptyFilter: CardFilter = { query: "", priority: "", label: "", assignee: "" };
 
 export const isFilterActive = (filter: CardFilter): boolean =>
-  Boolean(filter.query.trim() || filter.priority || filter.label);
+  Boolean(filter.query.trim() || filter.priority || filter.label || filter.assignee);
 
 export const cardMatchesFilter = (card: Card, filter: CardFilter): boolean => {
   const query = filter.query.trim().toLowerCase();
   if (query) {
-    const haystack = `${card.title} ${card.details} ${(card.labels ?? []).join(" ")}`.toLowerCase();
+    const haystack =
+      `${card.title} ${card.details} ${(card.labels ?? []).join(" ")} ${card.assignee ?? ""}`.toLowerCase();
     if (!haystack.includes(query)) return false;
   }
   if (filter.priority && card.priority !== filter.priority) return false;
   if (filter.label && !(card.labels ?? []).includes(filter.label)) return false;
+  if (filter.assignee && card.assignee !== filter.assignee) return false;
   return true;
 };
 
@@ -54,6 +57,14 @@ export const collectLabels = (board: BoardData): string[] => {
     (card.labels ?? []).forEach((label) => labels.add(label))
   );
   return Array.from(labels).sort();
+};
+
+export const collectAssignees = (board: BoardData): string[] => {
+  const assignees = new Set<string>();
+  Object.values(board.cards).forEach((card) => {
+    if (card.assignee) assignees.add(card.assignee);
+  });
+  return Array.from(assignees).sort();
 };
 
 export type BoardStats = {

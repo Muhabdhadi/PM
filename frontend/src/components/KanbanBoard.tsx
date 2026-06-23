@@ -23,6 +23,7 @@ import * as api from "@/lib/api";
 import { FilterBar } from "@/components/FilterBar";
 import {
   cardMatchesFilter,
+  collectAssignees,
   collectLabels,
   createId,
   emptyFilter,
@@ -292,6 +293,7 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
   const activeCard = activeCardId ? cardsById[activeCardId] ?? null : null;
   const editingCard = editingCardId ? cardsById[editingCardId] ?? null : null;
   const labels = useMemo(() => collectLabels(board), [board]);
+  const assignees = useMemo(() => collectAssignees(board), [board]);
   const stats = useMemo(() => getBoardStats(board), [board]);
   const filtering = isFilterActive(filter);
   const visibleCount = useMemo(
@@ -328,7 +330,7 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
             </button>
           )}
         </div>
-        <FilterBar filter={filter} labels={labels} onChange={setFilter} />
+        <FilterBar filter={filter} labels={labels} assignees={assignees} onChange={setFilter} />
       </div>
 
       {filtering && visibleCount === 0 ? (

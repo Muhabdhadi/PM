@@ -12,7 +12,7 @@ A multi-user Kanban project management web app with a Next.js frontend and a Fas
 - **Activity log** — each board records recent events (cards added/deleted, comments, sharing) with actor + timestamp, viewable in an Activity panel.
 - **Customizable columns** — add and remove columns per board (defaults: Backlog → Discovery → In Progress → Review → Done).
 - **Rich cards** — title, description, priority (low/medium/high), due date (with overdue highlighting), labels, and an assignee. Cards are created, edited (modal), moved via drag-and-drop, and deleted.
-- **Search & filter** — filter visible cards by text, priority, and label; a board summary shows total / done / overdue counts.
+- **Search & filter** — filter visible cards by text, priority, label, and assignee; a board summary shows total / done / overdue counts, with an empty state when nothing matches.
 - **AI assistant** — chat sidebar powered by OpenRouter that can read and update the active board via validated structured outputs.
 - **Responsive UI** — sidebar collapses to a drawer on mobile; the board scrolls horizontally with touch drag support.
 - **Dark mode** — theme toggle that persists to `localStorage` and respects the OS `prefers-color-scheme`, applied before first paint (no flash); built on CSS-variable design tokens.
@@ -72,19 +72,19 @@ npm run dev        # http://localhost:3000
 
 ## Run tests
 
-**Backend tests** (33 tests):
+**Backend tests** (34 tests):
 ```powershell
 cd backend
 py -m pytest -v
 ```
 
-**Frontend unit tests** (49 tests):
+**Frontend unit tests** (51 tests):
 ```powershell
 cd frontend
 npm run test:unit
 ```
 
-**End-to-end tests** (15 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
+**End-to-end tests** (16 tests — Playwright builds the frontend, copies it to `backend/static/`, then starts the backend on port 8000; runs serially against the shared dev DB):
 ```powershell
 cd frontend
 npx playwright test

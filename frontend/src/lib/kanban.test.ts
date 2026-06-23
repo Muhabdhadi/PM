@@ -1,5 +1,6 @@
 import {
   cardMatchesFilter,
+  collectAssignees,
   collectLabels,
   getBoardStats,
   isFilterActive,
@@ -55,8 +56,9 @@ describe("card filtering", () => {
     details: "final QA",
     priority: "high",
     labels: ["release", "urgent"],
+    assignee: "dana",
   };
-  const base: CardFilter = { query: "", priority: "", label: "" };
+  const base: CardFilter = { query: "", priority: "", label: "", assignee: "" };
 
   it("matches on title, details and labels", () => {
     expect(cardMatchesFilter(card, { ...base, query: "ship" })).toBe(true);
@@ -65,11 +67,13 @@ describe("card filtering", () => {
     expect(cardMatchesFilter(card, { ...base, query: "nope" })).toBe(false);
   });
 
-  it("matches on priority and label", () => {
+  it("matches on priority, label and assignee", () => {
     expect(cardMatchesFilter(card, { ...base, priority: "high" })).toBe(true);
     expect(cardMatchesFilter(card, { ...base, priority: "low" })).toBe(false);
     expect(cardMatchesFilter(card, { ...base, label: "release" })).toBe(true);
     expect(cardMatchesFilter(card, { ...base, label: "missing" })).toBe(false);
+    expect(cardMatchesFilter(card, { ...base, assignee: "dana" })).toBe(true);
+    expect(cardMatchesFilter(card, { ...base, assignee: "sam" })).toBe(false);
   });
 
   it("detects active filters", () => {
@@ -86,14 +90,18 @@ describe("board aggregates", () => {
       { id: "col-done", title: "Done", cardIds: ["c3"] },
     ],
     cards: {
-      c1: { id: "c1", title: "A", details: "", labels: ["x"], dueDate: "2000-01-01" },
-      c2: { id: "c2", title: "B", details: "", labels: ["y", "x"] },
-      c3: { id: "c3", title: "C", details: "" },
+      c1: { id: "c1", title: "A", details: "", labels: ["x"], dueDate: "2000-01-01", assignee: "sam" },
+      c2: { id: "c2", title: "B", details: "", labels: ["y", "x"], assignee: "dana" },
+      c3: { id: "c3", title: "C", details: "", assignee: "sam" },
     },
   };
 
   it("collects unique sorted labels", () => {
     expect(collectLabels(board)).toEqual(["x", "y"]);
+  });
+
+  it("collects unique sorted assignees", () => {
+    expect(collectAssignees(board)).toEqual(["dana", "sam"]);
   });
 
   it("computes totals, done and overdue counts", () => {

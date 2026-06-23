@@ -73,6 +73,20 @@ test("filters cards by search query", async ({ page }) => {
   await expect(page.getByTestId("card-card-1")).toBeVisible();
 });
 
+test("filters by assignee", async ({ page }) => {
+  await page.goto("/");
+  // Assign the seed card so the assignee filter becomes available.
+  await page.getByRole("button", { name: "Edit Seed card" }).click();
+  const dialog = page.getByRole("dialog", { name: /edit card/i });
+  await dialog.getByLabel("Assignee").fill("dana");
+  await dialog.getByRole("button", { name: /^save$/i }).click();
+
+  const assigneeFilter = page.getByLabel("Filter by assignee");
+  await expect(assigneeFilter).toBeVisible();
+  await assigneeFilter.selectOption("dana");
+  await expect(page.getByTestId("card-card-1")).toBeVisible();
+});
+
 test("edits a card to add a priority", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Edit Seed card" }).click();

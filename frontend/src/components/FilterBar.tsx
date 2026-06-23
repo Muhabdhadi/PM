@@ -5,10 +5,11 @@ import { PRIORITIES, emptyFilter, isFilterActive, type CardFilter, type Priority
 type FilterBarProps = {
   filter: CardFilter;
   labels: string[];
+  assignees?: string[];
   onChange: (filter: CardFilter) => void;
 };
 
-export const FilterBar = ({ filter, labels, onChange }: FilterBarProps) => {
+export const FilterBar = ({ filter, labels, assignees = [], onChange }: FilterBarProps) => {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <input
@@ -45,6 +46,22 @@ export const FilterBar = ({ filter, labels, onChange }: FilterBarProps) => {
           {labels.map((label) => (
             <option key={label} value={label}>
               {label}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {assignees.length > 0 && (
+        <select
+          value={filter.assignee}
+          onChange={(e) => onChange({ ...filter, assignee: e.target.value })}
+          aria-label="Filter by assignee"
+          className="rounded-xl border border-[var(--stroke)] bg-[var(--surface-strong)] px-3 py-2 text-sm outline-none transition focus:border-[var(--primary-blue)]"
+        >
+          <option value="">All assignees</option>
+          {assignees.map((a) => (
+            <option key={a} value={a}>
+              {a}
             </option>
           ))}
         </select>

@@ -28,11 +28,25 @@ describe("FilterBar", () => {
     expect(screen.getByLabelText(/filter by label/i)).toBeInTheDocument();
   });
 
+  it("renders an assignee filter only when assignees exist and emits changes", async () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <FilterBar filter={emptyFilter} labels={[]} onChange={onChange} />
+    );
+    expect(screen.queryByLabelText(/filter by assignee/i)).not.toBeInTheDocument();
+
+    rerender(
+      <FilterBar filter={emptyFilter} labels={[]} assignees={["dana"]} onChange={onChange} />
+    );
+    await userEvent.selectOptions(screen.getByLabelText(/filter by assignee/i), "dana");
+    expect(onChange).toHaveBeenCalledWith({ ...emptyFilter, assignee: "dana" });
+  });
+
   it("clears an active filter", async () => {
     const onChange = vi.fn();
     render(
       <FilterBar
-        filter={{ query: "ship", priority: "", label: "" }}
+        filter={{ query: "ship", priority: "", label: "", assignee: "" }}
         labels={[]}
         onChange={onChange}
       />
