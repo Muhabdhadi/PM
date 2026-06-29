@@ -58,7 +58,6 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
   );
 
   const router = useRouter();
-  const cardsById = useMemo(() => board.cards, [board.cards]);
 
   const persistBoard = async (nextBoard: BoardData) => {
     try {
@@ -290,8 +289,8 @@ export const KanbanBoard = ({ boardId }: KanbanBoardProps) => {
     };
   }, [router, boardId]);
 
-  const activeCard = activeCardId ? cardsById[activeCardId] ?? null : null;
-  const editingCard = editingCardId ? cardsById[editingCardId] ?? null : null;
+  const activeCard = activeCardId ? board.cards[activeCardId] ?? null : null;
+  const editingCard = editingCardId ? board.cards[editingCardId] ?? null : null;
   const labels = useMemo(() => collectLabels(board), [board]);
   const assignees = useMemo(() => collectAssignees(board), [board]);
   const stats = useMemo(() => getBoardStats(board), [board]);

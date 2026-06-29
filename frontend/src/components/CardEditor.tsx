@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { PRIORITIES, type Card, type Priority } from "@/lib/kanban";
+import { PRIORITIES, capitalize, type Card, type Priority } from "@/lib/kanban";
 
 export type CardPatch = {
   title?: string;
@@ -124,7 +124,7 @@ export const CardEditor = ({ card, onSave, onDelete, onClose, onAddComment }: Ca
                 <option value="">None</option>
                 {PRIORITIES.map((p) => (
                   <option key={p} value={p}>
-                    {p[0].toUpperCase() + p.slice(1)}
+                    {capitalize(p)}
                   </option>
                 ))}
               </select>

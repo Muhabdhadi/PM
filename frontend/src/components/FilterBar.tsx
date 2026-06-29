@@ -1,6 +1,6 @@
 "use client";
 
-import { PRIORITIES, emptyFilter, isFilterActive, type CardFilter, type Priority } from "@/lib/kanban";
+import { PRIORITIES, capitalize, emptyFilter, isFilterActive, type CardFilter, type Priority } from "@/lib/kanban";
 
 type FilterBarProps = {
   filter: CardFilter;
@@ -30,7 +30,7 @@ export const FilterBar = ({ filter, labels, assignees = [], onChange }: FilterBa
         <option value="">All priorities</option>
         {PRIORITIES.map((p) => (
           <option key={p} value={p}>
-            {p[0].toUpperCase() + p.slice(1)}
+            {capitalize(p)}
           </option>
         ))}
       </select>

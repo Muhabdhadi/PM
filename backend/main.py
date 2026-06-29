@@ -57,6 +57,6 @@ def serve_static(full_path: str):
     if full_path and os.path.isfile(html_candidate):
         return FileResponse(html_candidate, media_type="text/html")
     index = os.path.join(config.STATIC_DIR, "index.html")
-    if os.path.exists(index):
+    if os.path.isfile(index):
         return FileResponse(index, media_type="text/html")
     return HTMLResponse("<h1>PM Backend</h1><p>No static site found.</p>")

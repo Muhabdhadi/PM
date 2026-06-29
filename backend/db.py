@@ -156,13 +156,11 @@ def _migrate_legacy(conn):
                     "SELECT id FROM users WHERE username=?", (username,)
                 ).fetchone()
                 if user is None:
-                    conn.execute(
+                    cur = conn.execute(
                         "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
                         (username, hash_password(config.VALID_PASSWORD), _now()),
                     )
-                    owner_id = conn.execute(
-                        "SELECT id FROM users WHERE username=?", (username,)
-                    ).fetchone()["id"]
+                    owner_id = cur.lastrowid
                 else:
                     owner_id = user["id"]
                 conn.execute(
@@ -183,7 +181,6 @@ def _migrate_legacy(conn):
 
 def _seed_default_user(conn):
     """Ensure the configured default credentials exist as a user (idempotent)."""
-    count = conn.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"]
     existing = conn.execute(
         "SELECT id FROM users WHERE username=?", (config.VALID_USERNAME,)
     ).fetchone()

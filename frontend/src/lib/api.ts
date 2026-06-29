@@ -149,25 +149,23 @@ export async function listActivity(boardId: number) {
 
 // --- Single board kanban ------------------------------------------------
 
+const boardQs = (boardId?: number) => (boardId != null ? `?board_id=${boardId}` : "");
+
 export async function getBoard(boardId?: number) {
-  const qs = boardId != null ? `?board_id=${boardId}` : "";
   return asJson<{ board: BoardData; boardId: number; name: string | null }>(
-    await fetch(`/api/board${qs}`)
+    await fetch(`/api/board${boardQs(boardId)}`)
   );
 }
 
 export async function saveBoard(board: BoardData, boardId?: number) {
-  const qs = boardId != null ? `?board_id=${boardId}` : "";
   return asJson<{ status: string }>(
-    await fetch(`/api/board${qs}`, {
+    await fetch(`/api/board${boardQs(boardId)}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(board),
     })
   );
 }
-
-const boardQs = (boardId?: number) => (boardId != null ? `?board_id=${boardId}` : "");
 
 export async function createCard(
   card: { id: string; title: string; details: string; columnId: string },

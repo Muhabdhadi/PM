@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { PRIORITIES, type Priority } from "@/lib/kanban";
+import { PRIORITIES, capitalize, type Priority } from "@/lib/kanban";
 
 export type NewCardInput = {
   title: string;
@@ -70,7 +70,7 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
               <option value="">No priority</option>
               {PRIORITIES.map((p) => (
                 <option key={p} value={p}>
-                  {p[0].toUpperCase() + p.slice(1)}
+                  {capitalize(p)}
                 </option>
               ))}
             </select>

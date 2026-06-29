@@ -20,6 +20,9 @@ export type Card = {
 
 export const PRIORITIES: Priority[] = ["low", "medium", "high"];
 
+export const capitalize = (value: string): string =>
+  value.charAt(0).toUpperCase() + value.slice(1);
+
 export const priorityStyles: Record<Priority, string> = {
   low: "bg-emerald-100 text-emerald-700",
   medium: "bg-amber-100 text-amber-700",

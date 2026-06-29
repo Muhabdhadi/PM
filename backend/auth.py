@@ -23,11 +23,6 @@ def require_user(user=Depends(get_current_user)):
     return user
 
 
-# Backwards-compatible helper: some modules only need the username.
-def get_username_from_session(user=Depends(get_current_user)) -> str | None:
-    return user["username"] if user else None
-
-
 def _issue_session(response: Response, user_id: int) -> None:
     token = secrets.token_urlsafe(32)
     db.create_session(token, user_id)
